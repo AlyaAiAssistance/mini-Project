@@ -67,9 +67,1473 @@
     .dark .dot-grid {
       background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
     }
+    /* Loader Styles from Uiverse.io by SelfMadeSystem */ 
+    .absolute {
+      position: absolute;
+    }
+    .inline-block {
+      display: inline-block;
+    }
+    .loader {
+      display: flex;
+      margin: 0.25em 0;
+    }
+    .w-2 {
+      width: 0.5em;
+    }
+    .dash {
+      animation: dashArray 2s ease-in-out infinite,
+        dashOffset 2s linear infinite;
+    }
+    .spin {
+      animation: spinDashArray 2s ease-in-out infinite,
+        spin 8s ease-in-out infinite,
+        dashOffset 2s linear infinite;
+      transform-origin: center;
+    }
+    @keyframes dashArray {
+      0% {
+        stroke-dasharray: 0 1 359 0;
+      }
+      50% {
+        stroke-dasharray: 0 359 1 0;
+      }
+      100% {
+        stroke-dasharray: 359 1 0 0;
+      }
+    }
+    @keyframes spinDashArray {
+      0% {
+        stroke-dasharray: 270 90;
+      }
+      50% {
+        stroke-dasharray: 0 360;
+      }
+      100% {
+        stroke-dasharray: 270 90;
+      }
+    }
+    @keyframes dashOffset {
+      0% {
+        stroke-dashoffset: 365;
+      }
+      100% {
+        stroke-dashoffset: 5;
+      }
+    }
+    @keyframes spin {
+      0% {
+        rotate: 0deg;
+      }
+      12.5%,
+      25% {
+        rotate: 270deg;
+      }
+      37.5%,
+      50% {
+        rotate: 540deg;
+      }
+      62.5%,
+      75% {
+        rotate: 810deg;
+      }
+      87.5%,
+      100% {
+        rotate: 1080deg;
+      }
+    }
+
+    /* Preloader Overlay Styles */
+    #preloader {
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      background-color: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.6s ease, visibility 0.6s ease;
+    }
+    #preloader.fade-out {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .preloader-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+    }
+    .preloader-title {
+      color: #f8fafc;
+      font-family: 'Sora', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #00E0ED, #973BED, #FFC800);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: pulseText 2s ease-in-out infinite;
+    }
+    @keyframes pulseText {
+      0%, 100% { opacity: 0.7; transform: scale(0.98); }
+      50% { opacity: 1; transform: scale(1); }
+    }
+    .letter-svg {
+      width: 32px;
+      height: 32px;
+      fill: none;
+    }
+    @media (min-width: 640px) {
+      .letter-svg {
+        width: 52px;
+        height: 52px;
+      }
+    }
+    @media (min-width: 1024px) {
+      .letter-svg {
+        width: 64px;
+        height: 64px;
+      }
+    }
+    /* From Uiverse.io by catraco */ 
+    .btn-class-name {
+      --primary: 255, 65, 84;
+      --secondary: 150, 30, 45;
+      width: 130px;
+      height: 130px;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      user-select: none;
+      touch-action: manipulation;
+      outline: 10px solid rgba(var(--primary), .4);
+      border-radius: 100%;
+      position: relative;
+      transition: .3s;
+    }
+
+    .btn-class-name .back {
+      background: rgb(var(--secondary));
+      border-radius: 100%;
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .btn-class-name .front {
+      background: linear-gradient(0deg, rgba(var(--primary), .7) 20%, rgba(var(--primary)) 50%);
+      box-shadow: 0 .5em 1em -0.2em rgba(var(--secondary), .5);
+      border-radius: 100%;
+      position: absolute;
+      border: 2px solid rgb(var(--secondary));
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.8rem;
+      font-weight: 800;
+      font-family: inherit;
+      transform: translateY(-15%);
+      transition: .15s;
+      color: #ffffff;
+    }
+
+    .btn-class-name:active .front {
+      transform: translateY(0%);
+      box-shadow: 0 0;
+    }
+
+    /* From Uiverse.io by marcelodolza (Pearl Button - Brand Blue Edition) */ 
+    .pearl-btn {
+      --white: #ffffff;
+      --bg: #0765d6;
+      --radius: 100px;
+      outline: none;
+      cursor: pointer;
+      border: 0;
+      position: relative;
+      border-radius: var(--radius);
+      background-color: var(--bg);
+      transition: all 0.2s ease;
+      display: inline-block;
+      text-decoration: none;
+      box-shadow:
+        inset 0 0.3rem 0.9rem rgba(255, 255, 255, 0.45),
+        inset 0 -0.1rem 0.3rem rgba(0, 0, 0, 0.4),
+        inset 0 -0.4rem 0.9rem rgba(255, 255, 255, 0.6),
+        0 1rem 2rem -0.4rem rgba(7, 101, 214, 0.4);
+    }
+    .pearl-btn .wrap {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #ffffff;
+      padding: 13px 32px;
+      border-radius: inherit;
+      position: relative;
+      overflow: hidden;
+    }
+    .pearl-btn-sm .wrap {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #ffffff;
+      padding: 9px 22px;
+    }
+    .pearl-btn .wrap p span:nth-child(2) {
+      display: none;
+    }
+    .pearl-btn:hover .wrap p span:nth-child(1) {
+      display: none;
+    }
+    .pearl-btn:hover .wrap p span:nth-child(2) {
+      display: inline-block;
+    }
+    .pearl-btn .wrap p {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin: 0;
+      transition: all 0.2s ease;
+      transform: translateY(2%);
+    }
+    .pearl-btn .wrap::before,
+    .pearl-btn .wrap::after {
+      content: "";
+      position: absolute;
+      transition: all 0.3s ease;
+    }
+    .pearl-btn .wrap::before {
+      left: -15%;
+      right: -15%;
+      bottom: 25%;
+      top: -100%;
+      border-radius: 50%;
+      background-color: rgba(255, 255, 255, 0.22);
+    }
+    .pearl-btn .wrap::after {
+      left: 6%;
+      right: 6%;
+      top: 12%;
+      bottom: 40%;
+      border-radius: 22px 22px 0 0;
+      box-shadow: inset 0 10px 8px -10px rgba(255, 255, 255, 0.9);
+      background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.45) 0%,
+        rgba(0, 0, 0, 0) 50%,
+        rgba(0, 0, 0, 0) 100%
+      );
+    }
+    .pearl-btn:hover {
+      box-shadow:
+        inset 0 0.3rem 0.5rem rgba(255, 255, 255, 0.65),
+        inset 0 -0.1rem 0.3rem rgba(0, 0, 0, 0.5),
+        inset 0 -0.4rem 0.9rem rgba(255, 255, 255, 0.8),
+        0 1.4rem 2.4rem -0.4rem rgba(7, 101, 214, 0.5);
+    }
+    .pearl-btn:hover .wrap::before {
+      transform: translateY(-5%);
+    }
+    .pearl-btn:hover .wrap::after {
+      opacity: 0.6;
+      transform: translateY(5%);
+    }
+    .pearl-btn:hover .wrap p {
+      transform: translateY(-4%);
+    }
+    .pearl-btn:active {
+      transform: translateY(3px);
+      box-shadow:
+        inset 0 0.3rem 0.5rem rgba(255, 255, 255, 0.6),
+        inset 0 -0.1rem 0.3rem rgba(0, 0, 0, 0.6),
+        inset 0 -0.4rem 0.9rem rgba(255, 255, 255, 0.5),
+        0 0.8rem 1.5rem -0.4rem rgba(7, 101, 214, 0.4);
+    }
+
+    /* From Uiverse.io by Galahhad - BB8 Star Wars Theme Toggle */ 
+    .bb8-toggle {
+      --toggle-size: 6px;
+      --toggle-width: 10.625em;
+      --toggle-height: 5.625em;
+      --toggle-offset: calc((var(--toggle-height) - var(--bb8-diameter)) / 2);
+      --toggle-bg: linear-gradient(#2c4770, #070e2b 35%, #628cac 50% 70%, #a6c5d4) no-repeat;
+      --bb8-diameter: 4.375em;
+      --radius: 99em;
+      --transition: 0.4s;
+      --accent: #de7d2f;
+      --bb8-bg: #fff;
+      display: inline-block;
+      cursor: pointer;
+      font-size: var(--toggle-size);
+      user-select: none;
+      vertical-align: middle;
+    }
+
+    .bb8-toggle,
+    .bb8-toggle *,
+    .bb8-toggle *::before,
+    .bb8-toggle *::after {
+      -webkit-box-sizing: border-box;
+      box-sizing: border-box;
+    }
+
+    .bb8-toggle__checkbox {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      display: none;
+    }
+
+    .bb8-toggle__container {
+      width: var(--toggle-width);
+      height: var(--toggle-height);
+      background: var(--toggle-bg);
+      background-size: 100% 11.25em;
+      background-position-y: -5.625em;
+      border-radius: var(--radius);
+      position: relative;
+      -webkit-transition: var(--transition);
+      -o-transition: var(--transition);
+      transition: var(--transition);
+    }
+
+    .bb8 {
+      display: -webkit-box;
+      display: -ms-flexbox;
+      display: flex;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+      flex-direction: column;
+      -webkit-box-align: center;
+      -ms-flex-align: center;
+      align-items: center;
+      position: absolute;
+      top: calc(var(--toggle-offset) - 1.688em + 0.188em);
+      left: var(--toggle-offset);
+      -webkit-transition: var(--transition);
+      -o-transition: var(--transition);
+      transition: var(--transition);
+      z-index: 2;
+    }
+
+    .bb8__head-container {
+      position: relative;
+      -webkit-transition: var(--transition);
+      -o-transition: var(--transition);
+      transition: var(--transition);
+      z-index: 2;
+      -webkit-transform-origin: 1.25em 3.75em;
+      -ms-transform-origin: 1.25em 3.75em;
+      transform-origin: 1.25em 3.75em;
+    }
+
+    .bb8__head {
+      overflow: hidden;
+      margin-bottom: -0.188em;
+      width: 2.5em;
+      height: 1.688em;
+      background: linear-gradient(
+          transparent 0.063em,
+          dimgray 0.063em 0.313em,
+          transparent 0.313em 0.375em,
+          var(--accent) 0.375em 0.5em,
+          transparent 0.5em 1.313em,
+          silver 1.313em 1.438em,
+          transparent 1.438em
+        ),
+        linear-gradient(
+          45deg,
+          transparent 0.188em,
+          var(--bb8-bg) 0.188em 1.25em,
+          transparent 1.25em
+        ),
+        linear-gradient(
+          -45deg,
+          transparent 0.188em,
+          var(--bb8-bg) 0.188em 1.25em,
+          transparent 1.25em
+        ),
+        linear-gradient(var(--bb8-bg) 1.25em, transparent 1.25em);
+      border-radius: var(--radius) var(--radius) 0 0;
+      position: relative;
+      z-index: 1;
+      -webkit-filter: drop-shadow(0 0.063em 0.125em gray);
+      filter: drop-shadow(0 0.063em 0.125em gray);
+    }
+
+    .bb8__head::before {
+      content: "";
+      position: absolute;
+      width: 0.563em;
+      height: 0.563em;
+      background: radial-gradient(
+          0.125em circle at 0.25em 0.375em,
+          red,
+          transparent
+        ),
+        radial-gradient(
+          0.063em circle at 0.375em 0.188em,
+          var(--bb8-bg) 50%,
+          transparent 100%
+        ),
+        linear-gradient(45deg, #000 0.188em, dimgray 0.313em 0.375em, #000 0.5em);
+      border-radius: var(--radius);
+      top: 0.413em;
+      left: 50%;
+      -webkit-transform: translate(-50%);
+      -ms-transform: translate(-50%);
+      transform: translate(-50%);
+      -webkit-box-shadow: 0 0 0 0.089em lightgray, 0.563em 0.281em 0 -0.148em,
+        0.563em 0.281em 0 -0.1em var(--bb8-bg), 0.563em 0.281em 0 -0.063em;
+      box-shadow: 0 0 0 0.089em lightgray, 0.563em 0.281em 0 -0.148em,
+        0.563em 0.281em 0 -0.1em var(--bb8-bg), 0.563em 0.281em 0 -0.063em;
+      z-index: 1;
+      -webkit-transition: var(--transition);
+      -o-transition: var(--transition);
+      transition: var(--transition);
+    }
+
+    .bb8__head::after {
+      content: "";
+      position: absolute;
+      bottom: 0.375em;
+      left: 0;
+      width: 100%;
+      height: 0.188em;
+      background: linear-gradient(
+        to right,
+        var(--accent) 0.125em,
+        transparent 0.125em 0.188em,
+        var(--accent) 0.188em 0.313em,
+        transparent 0.313em 0.375em,
+        var(--accent) 0.375em 0.938em,
+        transparent 0.938em 1em,
+        var(--accent) 1em 1.125em,
+        transparent 1.125em 1.875em,
+        var(--accent) 1.875em 2em,
+        transparent 2em 2.063em,
+        var(--accent) 2.063em 2.25em,
+        transparent 2.25em 2.313em,
+        var(--accent) 2.313em 2.375em,
+        transparent 2.375em 2.438em,
+        var(--accent) 2.438em
+      );
+      -webkit-transition: var(--transition);
+      -o-transition: var(--transition);
+      transition: var(--transition);
+    }
+
+    .bb8__antenna {
+      position: absolute;
+      -webkit-transform: translateY(-90%);
+      -ms-transform: translateY(-90%);
+      transform: translateY(-90%);
+      width: 0.059em;
+      border-radius: var(--radius) var(--radius) 0 0;
+      -webkit-transition: var(--transition);
+      -o-transition: var(--transition);
+      transition: var(--transition);
+    }
+
+    .bb8__antenna:nth-child(1) {
+      height: 0.938em;
+      right: 0.938em;
+      background: linear-gradient(#000 0.188em, silver 0.188em);
+    }
+
+    .bb8__antenna:nth-child(2) {
+      height: 0.375em;
+      left: 50%;
+      -webkit-transform: translate(-50%, -90%);
+      -ms-transform: translate(-50%, -90%);
+      transform: translate(-50%, -90%);
+      background: silver;
+    }
+
+    .bb8__body {
+      width: 4.375em;
+      height: 4.375em;
+      background: var(--bb8-bg);
+      border-radius: var(--radius);
+      position: relative;
+      overflow: hidden;
+      -webkit-transition: var(--transition);
+      -o-transition: var(--transition);
+      transition: var(--transition);
+      z-index: 1;
+      -webkit-transform: rotate(45deg);
+      -ms-transform: rotate(45deg);
+      transform: rotate(45deg);
+      background: linear-gradient(
+          -90deg,
+          var(--bb8-bg) 4%,
+          var(--accent) 4% 10%,
+          transparent 10% 90%,
+          var(--accent) 90% 96%,
+          var(--bb8-bg) 96%
+        ),
+        linear-gradient(
+          var(--bb8-bg) 4%,
+          var(--accent) 4% 10%,
+          transparent 10% 90%,
+          var(--accent) 90% 96%,
+          var(--bb8-bg) 96%
+        ),
+        linear-gradient(
+          to right,
+          transparent 2.156em,
+          silver 2.156em 2.219em,
+          transparent 2.188em
+        ),
+        linear-gradient(
+          transparent 2.156em,
+          silver 2.156em 2.219em,
+          transparent 2.188em
+        );
+      background-color: var(--bb8-bg);
+    }
+
+    .bb8__body::after {
+      content: "";
+      bottom: 1.5em;
+      left: 0.563em;
+      position: absolute;
+      width: 0.188em;
+      height: 0.188em;
+      background: rgb(236, 236, 236);
+      color: rgb(236, 236, 236);
+      border-radius: 50%;
+      box-shadow: 0.875em 0.938em, 0 -1.25em, 0.875em -2.125em, 2.125em -2.125em,
+        3.063em -1.25em, 3.063em 0, 2.125em 0.938em;
+    }
+
+    .bb8__body::before {
+      content: "";
+      width: 2.625em;
+      height: 2.625em;
+      position: absolute;
+      border-radius: 50%;
+      z-index: 0.1;
+      overflow: hidden;
+      top: 50%;
+      left: 50%;
+      -webkit-transform: translate(-50%, -50%);
+      -ms-transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%);
+      border: 0.313em solid var(--accent);
+      background: radial-gradient(
+          1em circle at center,
+          rgb(236, 236, 236) 50%,
+          transparent 51%
+        ),
+        radial-gradient(1.25em circle at center, var(--bb8-bg) 50%, transparent 51%),
+        linear-gradient(
+          -90deg,
+          transparent 42%,
+          var(--accent) 42% 58%,
+          transparent 58%
+        ),
+        linear-gradient(var(--bb8-bg) 42%, var(--accent) 42% 58%, var(--bb8-bg) 58%);
+    }
+
+    .artificial__hidden {
+      position: absolute;
+      border-radius: inherit;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .bb8__shadow {
+      content: "";
+      width: var(--bb8-diameter);
+      height: 20%;
+      border-radius: 50%;
+      background: #3a271c;
+      box-shadow: 0.313em 0 3.125em #3a271c;
+      opacity: 0.25;
+      position: absolute;
+      bottom: 0;
+      left: calc(var(--toggle-offset) - 0.938em);
+      -webkit-transition: var(--transition);
+      -o-transition: var(--transition);
+      transition: var(--transition);
+      -webkit-transform: skew(-70deg);
+      -ms-transform: skew(-70deg);
+      transform: skew(-70deg);
+      z-index: 1;
+    }
+
+    .bb8-toggle__scenery {
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+      position: relative;
+      border-radius: inherit;
+    }
+
+    .bb8-toggle__scenery::before {
+      content: "";
+      position: absolute;
+      width: 100%;
+      height: 30%;
+      bottom: 0;
+      background: #b18d71;
+      z-index: 1;
+    }
+
+    .bb8-toggle__cloud {
+      z-index: 1;
+      position: absolute;
+      border-radius: 50%;
+    }
+
+    .bb8-toggle__cloud:nth-last-child(1) {
+      width: 0.875em;
+      height: 0.625em;
+      filter: blur(0.125em) drop-shadow(0.313em 0.313em #ffffffae)
+        drop-shadow(-0.625em 0 #fff) drop-shadow(-0.938em -0.125em #fff);
+      right: 1.875em;
+      top: 2.813em;
+      background: linear-gradient(to top right, #ffffffae, #ffffffae);
+      -webkit-transition: var(--transition);
+      -o-transition: var(--transition);
+      transition: var(--transition);
+    }
+
+    .bb8-toggle__cloud:nth-last-child(2) {
+      top: 0.625em;
+      right: 4.375em;
+      width: 0.875em;
+      height: 0.375em;
+      background: #dfdedeae;
+      filter: blur(0.125em) drop-shadow(-0.313em -0.188em #e0dfdfae)
+        drop-shadow(-0.625em -0.188em #bbbbbbae) drop-shadow(-1em 0.063em #cfcfcfae);
+      -webkit-transition: 0.6s;
+      -o-transition: 0.6s;
+      transition: 0.6s;
+    }
+
+    .bb8-toggle__cloud:nth-last-child(3) {
+      top: 1.25em;
+      right: 0.938em;
+      width: 0.875em;
+      height: 0.375em;
+      background: #ffffffae;
+      filter: blur(0.125em) drop-shadow(0.438em 0.188em #ffffffae)
+        drop-shadow(-0.625em 0.313em #ffffffae);
+      -webkit-transition: 0.8s;
+      -o-transition: 0.8s;
+      transition: 0.8s;
+    }
+
+    .gomrassen,
+    .hermes,
+    .chenini {
+      position: absolute;
+      border-radius: var(--radius);
+      background: linear-gradient(#fff, #6e8ea2);
+      top: 100%;
+    }
+
+    .gomrassen {
+      left: 0.938em;
+      width: 1.875em;
+      height: 1.875em;
+      box-shadow: 0 0 0.188em #ffffff52, 0 0 0.188em #6e8ea24b;
+      -webkit-transition: var(--transition);
+      -o-transition: var(--transition);
+      transition: var(--transition);
+    }
+
+    .gomrassen::before,
+    .gomrassen::after {
+      content: "";
+      position: absolute;
+      border-radius: inherit;
+      box-shadow: inset 0 0 0.063em rgb(140, 162, 169);
+      background: rgb(184, 196, 200);
+    }
+
+    .gomrassen::before {
+      left: 0.313em;
+      top: 0.313em;
+      width: 0.438em;
+      height: 0.438em;
+    }
+
+    .gomrassen::after {
+      width: 0.25em;
+      height: 0.25em;
+      left: 1.25em;
+      top: 0.75em;
+    }
+
+    .hermes {
+      left: 3.438em;
+      width: 0.625em;
+      height: 0.625em;
+      box-shadow: 0 0 0.125em #ffffff52, 0 0 0.125em #6e8ea24b;
+      -webkit-transition: 0.6s;
+      -o-transition: 0.6s;
+      transition: 0.6s;
+    }
+
+    .chenini {
+      left: 4.375em;
+      width: 0.5em;
+      height: 0.5em;
+      box-shadow: 0 0 0.125em #ffffff52, 0 0 0.125em #6e8ea24b;
+      -webkit-transition: 0.8s;
+      -o-transition: 0.8s;
+      transition: 0.8s;
+    }
+
+    .tatto-1,
+    .tatto-2 {
+      position: absolute;
+      width: 1.25em;
+      height: 1.25em;
+      border-radius: var(--radius);
+    }
+
+    .tatto-1 {
+      background: #fefefe;
+      right: 3.125em;
+      top: 0.625em;
+      box-shadow: 0 0 0.438em #fdf4e1;
+      -webkit-transition: var(--transition);
+      -o-transition: var(--transition);
+      transition: var(--transition);
+    }
+
+    .tatto-2 {
+      background: linear-gradient(#e6ac5c, #d75449);
+      right: 1.25em;
+      top: 2.188em;
+      box-shadow: 0 0 0.438em #e6ad5c3d, 0 0 0.438em #d755494f;
+      -webkit-transition: 0.7s;
+      -o-transition: 0.7s;
+      transition: 0.7s;
+    }
+
+    .bb8-toggle__star {
+      position: absolute;
+      width: 0.063em;
+      height: 0.063em;
+      background: #fff;
+      border-radius: var(--radius);
+      filter: drop-shadow(0 0 0.063em #fff);
+      color: #fff;
+      top: 100%;
+    }
+
+    .bb8-toggle__star:nth-child(1) {
+      left: 3.75em;
+      box-shadow: 1.25em 0.938em, -1.25em 2.5em, 0 1.25em, 1.875em 0.625em,
+        -3.125em 1.875em, 1.25em 2.813em;
+      -webkit-transition: 0.2s;
+      -o-transition: 0.2s;
+      transition: 0.2s;
+    }
+
+    .bb8-toggle__star:nth-child(2) {
+      left: 4.688em;
+      box-shadow: 0.625em 0, 0 0.625em, -0.625em -0.625em, 0.625em 0.938em,
+        -3.125em 1.25em, 1.25em -1.563em;
+      -webkit-transition: 0.3s;
+      -o-transition: 0.3s;
+      transition: 0.3s;
+    }
+
+    .bb8-toggle__star:nth-child(3) {
+      left: 5.313em;
+      box-shadow: -0.625em -0.625em, -2.188em 1.25em, -2.188em 0, -3.75em -0.625em,
+        -3.125em -0.625em, -2.5em -0.313em, 0.75em -0.625em;
+      -webkit-transition: var(--transition);
+      -o-transition: var(--transition);
+      transition: var(--transition);
+    }
+
+    .bb8-toggle__star:nth-child(4) {
+      left: 1.875em;
+      width: 0.125em;
+      height: 0.125em;
+      -webkit-transition: 0.5s;
+      -o-transition: 0.5s;
+      transition: 0.5s;
+    }
+
+    .bb8-toggle__star:nth-child(5) {
+      left: 5em;
+      width: 0.125em;
+      height: 0.125em;
+      -webkit-transition: 0.6s;
+      -o-transition: 0.6s;
+      transition: 0.6s;
+    }
+
+    .bb8-toggle__star:nth-child(6) {
+      left: 2.5em;
+      width: 0.125em;
+      height: 0.125em;
+      -webkit-transition: 0.7s;
+      -o-transition: 0.7s;
+      transition: 0.7s;
+    }
+
+    .bb8-toggle__star:nth-child(7) {
+      left: 3.438em;
+      width: 0.125em;
+      height: 0.125em;
+      -webkit-transition: 0.8s;
+      -o-transition: 0.8s;
+      transition: 0.8s;
+    }
+
+    /* actions */
+
+    .bb8-toggle__checkbox:checked
+      + .bb8-toggle__container
+      .bb8-toggle__star:nth-child(1) {
+      top: 0.625em;
+    }
+
+    .bb8-toggle__checkbox:checked
+      + .bb8-toggle__container
+      .bb8-toggle__star:nth-child(2) {
+      top: 1.875em;
+    }
+
+    .bb8-toggle__checkbox:checked
+      + .bb8-toggle__container
+      .bb8-toggle__star:nth-child(3) {
+      top: 1.25em;
+    }
+
+    .bb8-toggle__checkbox:checked
+      + .bb8-toggle__container
+      .bb8-toggle__star:nth-child(4) {
+      top: 3.438em;
+    }
+
+    .bb8-toggle__checkbox:checked
+      + .bb8-toggle__container
+      .bb8-toggle__star:nth-child(5) {
+      top: 3.438em;
+    }
+
+    .bb8-toggle__checkbox:checked
+      + .bb8-toggle__container
+      .bb8-toggle__star:nth-child(6) {
+      top: 0.313em;
+    }
+
+    .bb8-toggle__checkbox:checked
+      + .bb8-toggle__container
+      .bb8-toggle__star:nth-child(7) {
+      top: 1.875em;
+    }
+
+    .bb8-toggle__checkbox:checked + .bb8-toggle__container .bb8-toggle__cloud {
+      right: -100%;
+    }
+
+    .bb8-toggle__checkbox:checked + .bb8-toggle__container .gomrassen {
+      top: 0.938em;
+    }
+
+    .bb8-toggle__checkbox:checked + .bb8-toggle__container .hermes {
+      top: 2.5em;
+    }
+
+    .bb8-toggle__checkbox:checked + .bb8-toggle__container .chenini {
+      top: 2.75em;
+    }
+
+    .bb8-toggle__checkbox:checked + .bb8-toggle__container {
+      background-position-y: 0;
+    }
+
+    .bb8-toggle__checkbox:checked + .bb8-toggle__container .tatto-1 {
+      top: 100%;
+    }
+
+    .bb8-toggle__checkbox:checked + .bb8-toggle__container .tatto-2 {
+      top: 100%;
+    }
+
+    .bb8-toggle__checkbox:checked + .bb8-toggle__container .bb8 {
+      left: calc(100% - var(--bb8-diameter) - var(--toggle-offset));
+    }
+
+    .bb8-toggle__checkbox:checked + .bb8-toggle__container .bb8__shadow {
+      left: calc(100% - var(--bb8-diameter) - var(--toggle-offset) + 0.938em);
+      -webkit-transform: skew(70deg);
+      -ms-transform: skew(70deg);
+      transform: skew(70deg);
+    }
+
+    .bb8-toggle__checkbox:checked + .bb8-toggle__container .bb8__body {
+      -webkit-transform: rotate(180deg);
+      -ms-transform: rotate(180deg);
+      transform: rotate(225deg);
+    }
+
+    .bb8-toggle__checkbox:hover + .bb8-toggle__container .bb8__head::before {
+      left: 100%;
+    }
+
+    .bb8-toggle__checkbox:not(:checked):hover
+      + .bb8-toggle__container
+      .bb8__antenna:nth-child(1) {
+      right: 1.5em;
+    }
+
+    .bb8-toggle__checkbox:hover
+      + .bb8-toggle__container
+      .bb8__antenna:nth-child(2) {
+      left: 0.938em;
+    }
+
+    .bb8-toggle__checkbox:hover + .bb8-toggle__container .bb8__head::after {
+      background-position: 1.375em 0;
+    }
+
+    .bb8-toggle__checkbox:checked:hover
+      + .bb8-toggle__container
+      .bb8__head::before {
+      left: 0;
+    }
+
+    .bb8-toggle__checkbox:checked:hover
+      + .bb8-toggle__container
+      .bb8__antenna:nth-child(2) {
+      left: calc(100% - 0.938em);
+    }
+
+    .bb8-toggle__checkbox:checked:hover + .bb8-toggle__container .bb8__head::after {
+      background-position: -1.375em 0;
+    }
+
+    .bb8-toggle__checkbox:active + .bb8-toggle__container .bb8__head-container {
+      -webkit-transform: rotate(25deg);
+      -ms-transform: rotate(25deg);
+      transform: rotate(25deg);
+    }
+
+    .bb8-toggle__checkbox:checked:active
+      + .bb8-toggle__container
+      .bb8__head-container {
+      -webkit-transform: rotate(-25deg);
+      -ms-transform: rotate(-25deg);
+      transform: rotate(-25deg);
+    }
+
+    .bb8:hover .bb8__head::before,
+    .bb8:hover .bb8__antenna:nth-child(2) {
+      left: 50% !important;
+    }
+
+    .bb8:hover .bb8__antenna:nth-child(1) {
+      right: 0.938em !important;
+    }
+
+    .bb8:hover .bb8__head::after {
+      background-position: 0 0 !important;
+    }
+
+    /* From Uiverse.io by augustin_4687 (Animated Dot Pop Button) */ 
+    .dot-retro-btn {
+      --stone-50: #fafaf9;
+      --stone-800: #1c1917;
+      --btn-bg: #0765d6;
+      --btn-text-color: #ffffff;
+
+      font-size: 0.95rem;
+      cursor: pointer;
+      position: relative;
+      font-family: inherit;
+      font-weight: 700;
+      line-height: 1;
+      padding: 1px;
+      transform: translate(-3px, -3px);
+      outline: 2px solid transparent;
+      outline-offset: 4px;
+      border-radius: 9999px;
+      background-color: var(--stone-800);
+      color: var(--stone-800);
+      transition: transform 150ms ease, box-shadow 150ms ease;
+      text-align: center;
+      display: inline-block;
+      text-decoration: none;
+      box-shadow:
+        0.5px 0.5px 0 0 var(--stone-800),
+        1px 1px 0 0 var(--stone-800),
+        1.5px 1.5px 0 0 var(--stone-800),
+        2px 2px 0 0 var(--stone-800),
+        2.5px 2.5px 0 0 var(--stone-800),
+        3px 3px 0 0 var(--stone-800),
+        0 0 0 2px var(--stone-50),
+        0.5px 0.5px 0 2px var(--stone-50),
+        1px 1px 0 2px var(--stone-50),
+        1.5px 1.5px 0 2px var(--stone-50),
+        2px 2px 0 2px var(--stone-50),
+        2.5px 2.5px 0 2px var(--stone-50),
+        3px 3px 0 2px var(--stone-50),
+        3.5px 3.5px 0 2px var(--stone-50),
+        4px 4px 0 2px var(--stone-50);
+    }
+
+    .dot-retro-btn-danger {
+      --btn-bg: #d64545;
+    }
+
+    .dark .dot-retro-btn {
+      --stone-50: #0b1f2e;
+    }
+
+    .dot-retro-btn:hover {
+      transform: translate(0, 0);
+      box-shadow: 0 0 0 2px var(--stone-50);
+    }
+
+    .dot-retro-btn:active,
+    .dot-retro-btn:focus-visible {
+      outline-color: var(--btn-bg);
+    }
+
+    .dot-retro-btn > div {
+      position: relative;
+      pointer-events: none;
+      background-color: var(--btn-bg);
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+
+    .dot-retro-btn > div::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 9999px;
+      opacity: 0.45;
+      background-image: radial-gradient(
+          rgb(255 255 255 / 80%) 20%,
+          transparent 20%
+        ),
+        radial-gradient(rgb(255 255 255 / 100%) 20%, transparent 20%);
+      background-position:
+        0 0,
+        4px 4px;
+      background-size: 8px 8px;
+      mix-blend-mode: hard-light;
+      animation: dots 0.5s infinite linear;
+    }
+
+    .dot-retro-btn > div > span {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.65rem 1.4rem;
+      gap: 0.25rem;
+      color: var(--btn-text-color);
+      font-weight: 800;
+      filter: drop-shadow(0 -1px 0 rgba(0, 0, 0, 0.25));
+    }
+
+    .dot-retro-btn:active > div > span {
+      transform: translateY(2px);
+    }
+
+    /* From Uiverse.io by satyamchaudharydev (Liquid Wave Button) */ 
+    .wave-btn {
+      border: none;
+      min-width: 150px;
+      height: 42px;
+      color: #fff;
+      z-index: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #0765d6;
+      position: relative;
+      cursor: pointer;
+      border-radius: 10px;
+      overflow: hidden;
+      transition: all 0.2s ease;
+      vertical-align: middle;
+      box-shadow: 0 4px 12px rgba(7, 101, 214, 0.3);
+    }
+
+    .wave-btn.w-full {
+      width: 100%;
+      display: flex;
+    }
+
+    .wave-btn p {
+      margin: 0 auto;
+      align-self: center;
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-align: center;
+      z-index: 2;
+      position: relative;
+      padding: 0 1.25rem;
+      color: #ffffff;
+    }
+
+    .wave-btn::after {
+      position: absolute;
+      content: "";
+      width: 100%;
+      z-index: 1;
+      height: 12%;
+      bottom: 0;
+      left: 0;
+      clip-path: polygon(
+        0% 74%,
+        4% 75%,
+        8% 76%,
+        11% 77%,
+        15% 78%,
+        20% 78%,
+        25% 77%,
+        32% 77%,
+        37% 75%,
+        40% 74%,
+        43% 74%,
+        46% 73%,
+        52% 72%,
+        57% 72%,
+        65% 74%,
+        66% 75%,
+        71% 78%,
+        75% 82%,
+        81% 86%,
+        83% 88%,
+        88% 91%,
+        90% 94%,
+        94% 96%,
+        98% 98%,
+        100% 100%,
+        82% 100%,
+        0 100%
+      );
+      background: #60a5fa;
+      transition: 0.3s ease;
+    }
+
+    .wave-btn::before {
+      position: absolute;
+      content: "";
+      transform: rotate(180deg);
+      width: 100%;
+      height: 12%;
+      top: 0;
+      left: 0;
+      transition: 0.3s ease;
+      z-index: 1;
+      clip-path: polygon(
+        0% 74%,
+        4% 75%,
+        8% 76%,
+        11% 77%,
+        15% 78%,
+        20% 78%,
+        25% 77%,
+        32% 77%,
+        37% 75%,
+        40% 74%,
+        43% 74%,
+        46% 73%,
+        52% 72%,
+        57% 72%,
+        65% 74%,
+        66% 75%,
+        71% 78%,
+        75% 82%,
+        81% 86%,
+        83% 88%,
+        88% 91%,
+        90% 94%,
+        94% 96%,
+        98% 98%,
+        100% 100%,
+        82% 100%,
+        0 100%
+      );
+      background: #60a5fa;
+    }
+
+    .wave-btn:hover::after {
+      clip-path: polygon(
+        0 30%,
+        9% 34%,
+        7% 39%,
+        11% 43%,
+        13% 33%,
+        17% 30%,
+        24% 34%,
+        25% 35%,
+        30% 31%,
+        30% 38%,
+        39% 33%,
+        35% 43%,
+        43% 45%,
+        55% 46%,
+        65% 74%,
+        67% 66%,
+        81% 57%,
+        75% 82%,
+        81% 86%,
+        83% 88%,
+        88% 91%,
+        90% 94%,
+        94% 96%,
+        98% 98%,
+        100% 100%,
+        82% 100%,
+        0 100%
+      );
+      height: 80%;
+    }
+
+    .wave-btn:hover::before {
+      clip-path: polygon(
+        0 30%,
+        9% 34%,
+        7% 39%,
+        11% 43%,
+        13% 33%,
+        17% 30%,
+        24% 34%,
+        25% 35%,
+        30% 31%,
+        30% 38%,
+        39% 33%,
+        35% 43%,
+        43% 45%,
+        55% 46%,
+        65% 74%,
+        67% 66%,
+        81% 57%,
+        75% 82%,
+        81% 86%,
+        83% 88%,
+        88% 91%,
+        90% 94%,
+        94% 96%,
+        98% 98%,
+        100% 100%,
+        82% 100%,
+        0 100%
+      );
+      height: 80%;
+    }
+
+    /* From Uiverse.io by ke1221 (Neumorphic Soft 3D Button) */ 
+    .neu-btn {
+      color: #090909;
+      padding: 0.55em 1.25em;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 0.6em;
+      background: #e8e8e8;
+      cursor: pointer;
+      border: 1px solid #e8e8e8;
+      transition: all 0.3s ease;
+      box-shadow: 5px 5px 10px #c5c5c5, -5px -5px 10px #ffffff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      text-decoration: none;
+      font-family: inherit;
+    }
+
+    .neu-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #ffffff;
+    }
+
+    .neu-btn:active {
+      color: #444;
+      transform: translateY(0);
+      box-shadow: inset 4px 4px 10px #c5c5c5, inset -4px -4px 10px #ffffff;
+    }
+
+    .dark .neu-btn {
+      color: #e2e8f0;
+      background: #0f1c2c;
+      border-color: #0f1c2c;
+      box-shadow: 5px 5px 10px #050b12, -5px -5px 10px #192d46;
+    }
+
+    .dark .neu-btn:hover {
+      box-shadow: 6px 6px 12px #04090f, -6px -6px 12px #1c334f;
+    }
+
+    .dark .neu-btn:active {
+      color: #94a3b8;
+      box-shadow: inset 4px 4px 10px #050b12, inset -4px -4px 10px #192d46;
+    }
+
+    /* Clean Admin Login Form Card */ 
+    .novaxlo-form {
+      --novaxlo-purple: #0765d6;
+      --novaxlo-dark: #053b7e;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: white;
+      width: 100%;
+      max-width: 23.5em;
+      margin: 1.5rem auto;
+      border: 2px solid var(--novaxlo-dark);
+      border-bottom-left-radius: 1.5em;
+      border-top-right-radius: 1.5em;
+      box-shadow:
+        -10px 0px 0px var(--novaxlo-dark),
+        -10px 5px 20px rgba(0, 0, 0, 0.12);
+      overflow: hidden;
+      position: relative;
+      transition: box-shadow 0.25s ease, transform 0.25s ease;
+    }
+
+    .dark .novaxlo-form {
+      background-color: #0b1f2e;
+      border-color: #0765d6;
+      box-shadow:
+        -10px 0px 0px #0765d6,
+        -10px 5px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Phone, Tablet, & Laptop Responsiveness Optimization */
+    @media (max-width: 640px) {
+      .bb8-toggle {
+        --toggle-size: 5px;
+      }
+      .pearl-btn-sm {
+        font-size: 11px;
+      }
+      .dot-retro-btn {
+        font-size: 0.85rem;
+      }
+      .wave-btn {
+        min-width: 130px;
+        height: 38px;
+      }
+      .wave-btn p {
+        font-size: 0.85rem;
+        padding: 0 0.8rem;
+      }
+      .neu-btn {
+        padding: 0.45em 0.9em;
+        font-size: 0.82rem;
+      }
+      .novaxlo-form {
+        max-width: 100%;
+        margin: 1rem 0;
+      }
+    }
+
+    @media (min-width: 641px) and (max-width: 1024px) {
+      .bb8-toggle {
+        --toggle-size: 6px;
+      }
+    }
   </style>
 </head>
 <body class="bg-slate-50 text-ink antialiased transition-colors dark:bg-[#071424] dark:text-slate-100">
+  <!-- Website Preloader -->
+  <div id="preloader">
+    <div class="preloader-content">
+      <div class="loader">
+        <svg height="0" width="0" viewBox="0 0 64 64" class="absolute">
+          <defs class="s-xJBuHA073rTt" xmlns="http://www.w3.org/2000/svg">
+            <linearGradient class="s-xJBuHA073rTt" gradientUnits="userSpaceOnUse" y2="2" x2="0" y1="62" x1="0" id="b">
+              <stop class="s-xJBuHA073rTt" stop-color="#973BED"></stop>
+              <stop class="s-xJBuHA073rTt" stop-color="#007CFF" offset="1"></stop>
+            </linearGradient>
+            <linearGradient class="s-xJBuHA073rTt" gradientUnits="userSpaceOnUse" y2="0" x2="0" y1="64" x1="0" id="c">
+              <stop class="s-xJBuHA073rTt" stop-color="#FFC800"></stop>
+              <stop class="s-xJBuHA073rTt" stop-color="#F0F" offset="1"></stop>
+              <animateTransform repeatCount="indefinite" keySplines=".42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1" keyTimes="0; 0.125; 0.25; 0.375; 0.5; 0.625; 0.75; 0.875; 1" dur="8s" values="0 32 32;-270 32 32;-270 32 32;-540 32 32;-540 32 32;-810 32 32;-810 32 32;-1080 32 32;-1080 32 32" type="rotate" attributeName="gradientTransform"></animateTransform>
+            </linearGradient>
+            <linearGradient class="s-xJBuHA073rTt" gradientUnits="userSpaceOnUse" y2="2" x2="0" y1="62" x1="0" id="d">
+              <stop class="s-xJBuHA073rTt" stop-color="#00E0ED"></stop>
+              <stop class="s-xJBuHA073rTt" stop-color="#00DA72" offset="1"></stop>
+            </linearGradient>
+          </defs>
+        </svg>
+
+        <!-- T -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="letter-svg inline-block"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#b)" d="M 10,14 H 54 M 32,14 V 54" class="dash" pathLength="360"></path></svg>
+        <!-- R -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="letter-svg inline-block"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#c)" d="M 14,54 V 14 H 36 C 48,14 48,30 36,30 H 14 M 30,30 L 48,54" class="spin" pathLength="360"></path></svg>
+        <!-- A -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="letter-svg inline-block"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#d)" d="M 10,54 L 32,14 L 54,54 M 19,38 H 45" class="dash" pathLength="360"></path></svg>
+        <!-- V -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="letter-svg inline-block"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#b)" d="M 10,14 L 32,54 L 54,14" class="dash" pathLength="360"></path></svg>
+        <!-- E -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="letter-svg inline-block"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#c)" d="M 50,14 H 14 V 54 H 50 M 14,34 H 40" class="spin" pathLength="360"></path></svg>
+        <!-- L -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="letter-svg inline-block"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#d)" d="M 14,14 V 54 H 50" class="dash" pathLength="360"></path></svg>
+
+        <div class="w-2 sm:w-4 inline-block"></div>
+
+        <!-- S -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="letter-svg inline-block"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#b)" d="M 46,20 C 46,12 18,12 18,25 C 18,38 46,36 46,47 C 46,58 18,58 18,50" class="dash" pathLength="360"></path></svg>
+        <!-- H -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="letter-svg inline-block"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#c)" d="M 14,14 V 54 M 50,14 V 54 M 14,34 H 50" class="spin" pathLength="360"></path></svg>
+        <!-- I -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="letter-svg inline-block"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#d)" d="M 32,14 V 54" class="dash" pathLength="360"></path></svg>
+        <!-- E -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="letter-svg inline-block"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#b)" d="M 50,14 H 14 V 54 H 50 M 14,34 H 40" class="dash" pathLength="360"></path></svg>
+        <!-- L -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="letter-svg inline-block"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#c)" d="M 14,14 V 54 H 50" class="spin" pathLength="360"></path></svg>
+        <!-- D -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="letter-svg inline-block"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#d)" d="M 14,14 V 54 H 30 C 48,54 48,14 30,14 Z" class="dash" pathLength="360"></path></svg>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      function hidePreloader() {
+        const preloader = document.getElementById('preloader');
+        if (preloader && !preloader.classList.contains('fade-out')) {
+          setTimeout(function() {
+            preloader.classList.add('fade-out');
+            setTimeout(function() {
+              preloader.style.display = 'none';
+            }, 600);
+          }, 2200);
+        }
+      }
+      if (document.readyState === 'complete') {
+        hidePreloader();
+      } else {
+        window.addEventListener('load', hidePreloader);
+        // Fallback safety timeout
+        setTimeout(hidePreloader, 4200);
+      }
+    })();
+  </script>
+
   <div id="root"></div>
 
   <script type="text/babel">
@@ -247,31 +1711,33 @@
           </p>
 
           <div className="my-8 flex justify-center">
+            {/* From Uiverse.io by catraco */}
             <button
               onMouseDown={begin}
               onMouseUp={stop}
               onMouseLeave={stop}
               onTouchStart={(e) => { e.preventDefault(); begin(); }}
               onTouchEnd={stop}
-              className={`sos-pulse relative flex h-36 w-36 select-none items-center justify-center rounded-full text-white transition-transform active:scale-95 ${
-                sent ? 'bg-emerald-600' : 'bg-danger'
-              }`}
+              className="btn-class-name"
               aria-label="Hold to trigger demo SOS"
             >
-              <svg className="absolute inset-0 -rotate-90" viewBox="0 0 100 100">
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="46"
-                  fill="none"
-                  stroke="rgba(255,255,255,0.35)"
-                  strokeWidth="5"
-                  strokeDasharray={`${progress * 289} 289`}
-                  strokeLinecap="round"
-                />
-              </svg>
-              <span className="font-display text-3xl font-extrabold tracking-widest">
-                {sent ? '✓' : 'SOS'}
+              <span className="back"></span>
+              <span className="front">
+                <svg className="absolute inset-0 -rotate-90 pointer-events-none p-1" viewBox="0 0 100 100">
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="44"
+                    fill="none"
+                    stroke="rgba(255,255,255,0.85)"
+                    strokeWidth="6"
+                    strokeDasharray={`${progress * 276} 276`}
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <span className="font-display font-black tracking-wider">
+                  {sent ? '✓' : 'SoS'}
+                </span>
               </span>
             </button>
           </div>
@@ -461,37 +1927,108 @@
               <button onClick={() => setView('landing')} className="flex items-center gap-2 font-display text-2xl font-bold text-brand-600 dark:text-brand-400">
                 🛡️ TravelShield
               </button>
-              <div className="hidden items-center gap-8 md:flex">
-                <a href="#features" onClick={() => setView('landing')} className="font-medium text-slate-600 transition-colors hover:text-brand-600 dark:text-slate-300 dark:hover:text-white">Features</a>
-                <a href="#how-it-works" onClick={() => setView('landing')} className="font-medium text-slate-600 transition-colors hover:text-brand-600 dark:text-slate-300 dark:hover:text-white">How It Works</a>
-                <a href="#testimonials" onClick={() => setView('landing')} className="font-medium text-slate-600 transition-colors hover:text-brand-600 dark:text-slate-300 dark:hover:text-white">Testimonials</a>
-                <button
-                  onClick={toggleTheme}
-                  className="rounded-lg bg-slate-100 p-2 text-ink transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
-                  aria-label="Toggle dark mode"
-                >
-                  {dark ? '☀️' : '🌙'}
-                </button>
+              <div className="hidden items-center gap-4 md:flex">
+                <a href="#features" onClick={() => setView('landing')} className="neu-btn">Features</a>
+                <a href="#how-it-works" onClick={() => setView('landing')} className="neu-btn">How It Works</a>
+                <a href="#testimonials" onClick={() => setView('landing')} className="neu-btn">Testimonials</a>
+                <label className="bb8-toggle">
+                  <input
+                    className="bb8-toggle__checkbox"
+                    type="checkbox"
+                    checked={dark}
+                    onChange={toggleTheme}
+                    aria-label="Toggle dark mode"
+                  />
+                  <div className="bb8-toggle__container">
+                    <div className="bb8-toggle__scenery">
+                      <div className="bb8-toggle__star"></div>
+                      <div className="bb8-toggle__star"></div>
+                      <div className="bb8-toggle__star"></div>
+                      <div className="bb8-toggle__star"></div>
+                      <div className="bb8-toggle__star"></div>
+                      <div className="bb8-toggle__star"></div>
+                      <div className="bb8-toggle__star"></div>
+                      <div className="tatto-1"></div>
+                      <div className="tatto-2"></div>
+                      <div className="gomrassen"></div>
+                      <div className="hermes"></div>
+                      <div className="chenini"></div>
+                      <div className="bb8-toggle__cloud"></div>
+                      <div className="bb8-toggle__cloud"></div>
+                      <div className="bb8-toggle__cloud"></div>
+                    </div>
+                    <div className="bb8">
+                      <div className="bb8__head-container">
+                        <div className="bb8__antenna"></div>
+                        <div className="bb8__antenna"></div>
+                        <div className="bb8__head"></div>
+                      </div>
+                      <div className="bb8__body"></div>
+                    </div>
+                    <div className="artificial__hidden">
+                      <div className="bb8__shadow"></div>
+                    </div>
+                  </div>
+                </label>
                 <button
                   onClick={() => { setView('dashboard'); setTab('user'); }}
-                  className="font-medium text-slate-600 transition-colors hover:text-brand-600 dark:text-slate-300 dark:hover:text-white"
+                  className="neu-btn"
                 >
                   Dashboard
                 </button>
                 <button
                   onClick={() => { setView('dashboard'); setTab('user'); }}
-                  className="rounded-lg bg-brand-600 px-5 py-2.5 font-semibold text-white shadow-md shadow-brand-600/25 transition-colors hover:bg-brand-700"
+                  className="pearl-btn pearl-btn-sm"
                 >
-                  Get Started
+                  <div className="wrap">
+                    <p>
+                      <span>✧</span>
+                      <span>✦</span>
+                      Get Started
+                    </p>
+                  </div>
                 </button>
               </div>
               <div className="flex items-center gap-3 md:hidden">
-                <button
-                  onClick={toggleTheme}
-                  className="rounded-lg bg-slate-100 p-2 text-ink dark:bg-slate-800 dark:text-slate-100"
-                >
-                  {dark ? '☀️' : '🌙'}
-                </button>
+                <label className="bb8-toggle">
+                  <input
+                    className="bb8-toggle__checkbox"
+                    type="checkbox"
+                    checked={dark}
+                    onChange={toggleTheme}
+                    aria-label="Toggle dark mode"
+                  />
+                  <div className="bb8-toggle__container">
+                    <div className="bb8-toggle__scenery">
+                      <div className="bb8-toggle__star"></div>
+                      <div className="bb8-toggle__star"></div>
+                      <div className="bb8-toggle__star"></div>
+                      <div className="bb8-toggle__star"></div>
+                      <div className="bb8-toggle__star"></div>
+                      <div className="bb8-toggle__star"></div>
+                      <div className="bb8-toggle__star"></div>
+                      <div className="tatto-1"></div>
+                      <div className="tatto-2"></div>
+                      <div className="gomrassen"></div>
+                      <div className="hermes"></div>
+                      <div className="chenini"></div>
+                      <div className="bb8-toggle__cloud"></div>
+                      <div className="bb8-toggle__cloud"></div>
+                      <div className="bb8-toggle__cloud"></div>
+                    </div>
+                    <div className="bb8">
+                      <div className="bb8__head-container">
+                        <div className="bb8__antenna"></div>
+                        <div className="bb8__antenna"></div>
+                        <div className="bb8__head"></div>
+                      </div>
+                      <div className="bb8__body"></div>
+                    </div>
+                    <div className="artificial__hidden">
+                      <div className="bb8__shadow"></div>
+                    </div>
+                  </div>
+                </label>
                 <button
                   onClick={() => setMenuOpen(!menuOpen)}
                   className="text-ink dark:text-slate-100"
@@ -502,12 +2039,23 @@
               </div>
             </nav>
             {menuOpen && (
-              <div className="bg-white px-6 pb-4 shadow-lg md:hidden dark:bg-[#071424]">
-                <a href="#features" onClick={() => { setView('landing'); setMenuOpen(false); }} className="block py-2 text-slate-600 dark:text-slate-300">Features</a>
-                <a href="#how-it-works" onClick={() => { setView('landing'); setMenuOpen(false); }} className="block py-2 text-slate-600 dark:text-slate-300">How It Works</a>
-                <a href="#testimonials" onClick={() => { setView('landing'); setMenuOpen(false); }} className="block py-2 text-slate-600 dark:text-slate-300">Testimonials</a>
-                <button onClick={() => { setView('dashboard'); setTab('user'); setMenuOpen(false); }} className="block w-full py-2 text-left text-slate-600 dark:text-slate-300">Dashboard</button>
-                <button onClick={() => { setView('dashboard'); setTab('user'); setMenuOpen(false); }} className="mt-2 block w-full rounded-lg bg-brand-600 px-4 py-2 text-center font-semibold text-white">Get Started</button>
+              <div className="bg-white/95 px-6 py-4 shadow-2xl backdrop-blur-xl border-b border-slate-200/80 md:hidden dark:bg-[#071424]/95 dark:border-slate-800 space-y-3">
+                <a href="#features" onClick={() => { setView('landing'); setMenuOpen(false); }} className="neu-btn w-full justify-center">Features</a>
+                <a href="#how-it-works" onClick={() => { setView('landing'); setMenuOpen(false); }} className="neu-btn w-full justify-center">How It Works</a>
+                <a href="#testimonials" onClick={() => { setView('landing'); setMenuOpen(false); }} className="neu-btn w-full justify-center">Testimonials</a>
+                <button onClick={() => { setView('dashboard'); setTab('user'); setMenuOpen(false); }} className="neu-btn w-full justify-center">Dashboard</button>
+                <button
+                  onClick={() => { setView('dashboard'); setTab('user'); setMenuOpen(false); }}
+                  className="pearl-btn pearl-btn-sm w-full mt-2"
+                >
+                  <div className="wrap flex justify-center">
+                    <p>
+                      <span>✧</span>
+                      <span>✦</span>
+                      Get Started
+                    </p>
+                  </div>
+                </button>
               </div>
             )}
           </header>
@@ -531,9 +2079,15 @@
                   <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
                     <button
                       onClick={() => { setView('dashboard'); setTab('user'); }}
-                      className="group inline-flex items-center gap-2 rounded-lg bg-brand-600 px-8 py-3.5 font-bold text-white shadow-lg shadow-brand-600/25 transition-transform hover:scale-105 hover:bg-brand-700"
+                      className="pearl-btn"
                     >
-                      Get Started Free →
+                      <div className="wrap">
+                        <p>
+                          <span>✧</span>
+                          <span>✦</span>
+                          Get Started Free →
+                        </p>
+                      </div>
                     </button>
                     <a
                       href="#features"
@@ -679,25 +2233,33 @@
                 <h1 className="font-display text-3xl font-extrabold text-brand-600 dark:text-brand-400">TravelShield Dashboard</h1>
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Smart Tourist Safety Monitoring System</p>
 
-                <nav className="mt-5 flex flex-wrap items-center justify-center gap-2">
+                <nav className="mt-5 flex flex-wrap items-center justify-center gap-3">
                   <button
                     onClick={() => setView('landing')}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-2 text-sm font-medium text-ink transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100"
+                    className="neu-btn"
                   >
                     ← Back to Home
                   </button>
                   {['user', 'admin'].map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setTab(t)}
-                      className={`rounded-lg px-3.5 py-2 text-sm font-semibold transition ${
-                        tab === t
-                          ? 'bg-brand-600 text-white shadow-md'
-                          : 'bg-slate-100 text-ink dark:bg-slate-800 dark:text-slate-100'
-                      }`}
-                    >
-                      {t === 'user' ? 'User Dashboard' : 'Admin Dashboard'}
-                    </button>
+                    tab === t ? (
+                      /* From Uiverse.io by satyamchaudharydev */
+                      <button
+                        key={t}
+                        onClick={() => setTab(t)}
+                        className="wave-btn"
+                      >
+                        <p>{t === 'user' ? 'User Dashboard' : 'Admin Dashboard'}</p>
+                      </button>
+                    ) : (
+                      /* From Uiverse.io by ke1221 */
+                      <button
+                        key={t}
+                        onClick={() => setTab(t)}
+                        className="neu-btn"
+                      >
+                        {t === 'user' ? 'User Dashboard' : 'Admin Dashboard'}
+                      </button>
+                    )
                   ))}
                 </nav>
               </header>
@@ -764,9 +2326,13 @@
                         Address / Notes
                         <textarea className={`${inputCls} min-h-[72px]`} rows={2} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
                       </label>
-                      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-                        <button type="submit" className="flex-1 rounded-lg bg-brand-600 py-2.5 font-semibold text-white hover:bg-brand-700">Register & Generate ID</button>
-                        <button type="button" onClick={() => downloadJSON('travelshield_db.json', { users, sos, alerts })} className="rounded-lg bg-slate-100 px-4 py-2.5 font-semibold text-ink hover:bg-slate-200 dark:bg-slate-800 dark:text-white">Download DB</button>
+                      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+                        {/* From Uiverse.io by satyamchaudharydev */}
+                        <button type="submit" className="wave-btn w-full flex-1">
+                          <p>Register & Generate ID</p>
+                        </button>
+                        {/* From Uiverse.io by ke1221 */}
+                        <button type="button" onClick={() => downloadJSON('travelshield_db.json', { users, sos, alerts })} className="neu-btn shrink-0">Download DB</button>
                       </div>
                     </form>
                     {regStatus && <p className="mt-2 text-sm font-medium text-brand-600 dark:text-brand-400">{regStatus}</p>}
@@ -782,9 +2348,11 @@
                   {/* Lookup */}
                   <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
                     <h2 className="font-display text-lg font-bold">ID Lookup</h2>
-                    <div className="mt-3 flex gap-2">
+                    <div className="mt-3 flex items-center gap-3">
                       <input className={`${inputCls} mt-0`} placeholder="Enter unique ID" value={lookupId} onChange={(e) => setLookupId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && doLookup()} />
-                      <button onClick={doLookup} className="rounded-lg bg-brand-600 px-5 font-semibold text-white hover:bg-brand-700">Lookup</button>
+                      <button onClick={doLookup} className="dot-retro-btn shrink-0">
+                        <div><span>Lookup</span></div>
+                      </button>
                     </div>
                     {lookupResult === 'none' && <p className="mt-3 text-sm font-medium text-danger">No record found.</p>}
                     {lookupResult && lookupResult !== 'none' && (
@@ -800,14 +2368,16 @@
                   {/* Helplines */}
                   <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
                     <h2 className="font-display text-lg font-bold">🚨 Quick Helplines</h2>
-                    <div className="mt-3 space-y-2">
+                    <div className="mt-3 space-y-3">
                       {HELPLINES.map((h) => (
                         <div key={h.number} className="flex items-center justify-between rounded-lg border border-slate-100 p-3 dark:border-slate-800">
                           <div>
                             <p className="font-bold">{h.label}</p>
                             <p className="text-xs text-slate-500 dark:text-slate-400">{h.sub}</p>
                           </div>
-                          <a href={`tel:${h.number}`} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white ${h.tone === 'danger' ? 'bg-danger' : 'bg-brand-600'}`}>Call {h.number}</a>
+                          <a href={`tel:${h.number}`} className={`dot-retro-btn ${h.tone === 'danger' ? 'dot-retro-btn-danger' : ''}`}>
+                            <div><span>Call {h.number}</span></div>
+                          </a>
                         </div>
                       ))}
                     </div>
@@ -840,17 +2410,47 @@
                 /* Admin Tab */
                 <aside className="mt-6 space-y-6">
                   {!adminAuthed ? (
-                    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
-                      <h2 className="font-display text-lg font-bold">Admin Login</h2>
-                      <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                        Default password: <strong className="text-brand-600 dark:text-brand-400">admin123</strong>
-                      </p>
-                      <div className="mt-3 flex gap-2">
-                        <input className={`${inputCls} mt-0`} type="password" placeholder="Admin password" value={adminPass} onChange={(e) => setAdminPass(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && loginAdmin()} />
-                        <button onClick={loginAdmin} className="rounded-lg bg-brand-600 px-5 font-semibold text-white">Login</button>
-                      </div>
-                      {adminStatus && <p className="mt-2 text-sm font-medium text-danger">{adminStatus}</p>}
-                    </section>
+                    <div className="rounded-2xl border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-[#0b1f2e]">
+                      <form className="w-full p-6" onSubmit={(e) => { e.preventDefault(); loginAdmin(); }}>
+                        <div className="text-center">
+                          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-600/10 text-2xl font-bold text-brand-600 dark:bg-brand-500/20 dark:text-brand-400">
+                            🔐
+                          </div>
+                          <h2 className="mt-3 font-display text-xl font-extrabold text-ink dark:text-white">Admin Login</h2>
+                          <p className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">Log in to dashboard</p>
+                        </div>
+                        <div className="mt-6 space-y-4">
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Username</label>
+                            <input
+                              className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm font-semibold text-ink outline-none transition focus:border-brand-600 focus:bg-white focus:ring-4 focus:ring-brand-600/10 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100 dark:focus:border-brand-400 dark:focus:bg-slate-900"
+                              type="text"
+                              defaultValue="admin"
+                              readOnly
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Password</label>
+                            <input
+                              className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm font-semibold text-ink outline-none transition focus:border-brand-600 focus:bg-white focus:ring-4 focus:ring-brand-600/10 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100 dark:focus:border-brand-400 dark:focus:bg-slate-900"
+                              type="password"
+                              placeholder="Enter admin password"
+                              value={adminPass}
+                              onChange={(e) => setAdminPass(e.target.value)}
+                              required
+                            />
+                          </div>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-slate-400">Default pass: <strong className="cursor-pointer text-brand-600 dark:text-brand-400" onClick={() => setAdminPass('admin123')}>admin123</strong></span>
+                            <button type="button" onClick={() => setAdminStatus('Default password is: admin123')} className="font-bold text-brand-600 hover:underline dark:text-brand-400">Forgot?</button>
+                          </div>
+                          <button type="submit" className="wave-btn w-full mt-2">
+                            <p>Log In</p>
+                          </button>
+                          {adminStatus && <p className="text-center text-xs font-bold text-danger">{adminStatus}</p>}
+                        </div>
+                      </form>
+                    </div>
                   ) : (
                     <>
                       <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
