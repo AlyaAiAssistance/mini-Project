@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TravelShield — Smart Tourist Safety</title>
+  <meta name="description" content="TravelShield - Smart tourist safety monitoring with real-time alerts, one-tap SOS and safe zone maps." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            display: ['Sora', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              300: '#93c5fd',
+              400: '#60a5fa',
+              500: '#3b82f6',
+              600: '#0765d6',
+              700: '#1d4ed8',
+              900: '#1e3a8a',
+            },
+            ink: '#072033',
+            danger: '#d64545',
+            warn: '#e69819',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React & ReactDOM CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+
+  <!-- Babel Standalone CDN -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    @keyframes pulseSoft {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.04); opacity: 0.9; }
+    }
+    .sos-pulse {
+      animation: pulseSoft 2s infinite ease-in-out;
+    }
+    .dot-grid {
+      background-image: radial-gradient(rgba(7, 101, 214, 0.12) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    .dark .dot-grid {
+      background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-ink antialiased transition-colors dark:bg-[#071424] dark:text-slate-100">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+    // Keys for LocalStorage
+    const USERS_KEY = 'sts_users_v2';
+    const SOS_KEY = 'sts_sos_v2';
+    const ADMIN_HASH_KEY = 'sts_admin_hash_v2';
+    const ALERTS_KEY = 'sts_alerts_v2';
+    const THEME_KEY = 'sts_theme';
+
+    // Helper functions
+    function uuidv4() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0;
+        const v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+      });
+    }
+
+    function loadJSON(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        return JSON.parse(raw);
+      } catch {
+        return fallback;
+      }
+    }
+
+    function saveJSON(key, value) {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    function formatDate(iso) {
+      try {
+        return new Date(iso).toLocaleString();
+      } catch {
+        return iso;
+      }
+    }
+
+    function downloadJSON(filename, obj) {
+      const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }
+
+    async function sha256(message) {
+      const enc = new TextEncoder();
+      const buf = await crypto.subtle.digest('SHA-256', enc.encode(message));
+      return Array.from(new Uint8Array(buf))
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
+    }
+
+    async function ensureAdmin() {
+      if (!localStorage.getItem(ADMIN_HASH_KEY)) {
+        localStorage.setItem(ADMIN_HASH_KEY, await sha256('admin123'));
+      }
+    }
+
+    async function copyToClipboard(text) {
+      if (!text) return false;
+      if (navigator.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch {}
+      }
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return ok;
+      } catch {
+        document.body.removeChild(ta);
+        return false;
+      }
+    }
+
+    function getPosition(timeout = 6000) {
+      return new Promise((resolve) => {
+        if (!('geolocation' in navigator)) return resolve('unavailable');
+        const timer = setTimeout(() => resolve('unavailable'), timeout + 500);
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            clearTimeout(timer);
+            resolve(`${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`);
+          },
+          () => {
+            clearTimeout(timer);
+            resolve('permission denied');
+          },
+          { timeout, maximumAge: 60000 }
+        );
+      });
+    }
+
+    // Static Data
+    const HELPLINES = [
+      { label: 'National Emergency', sub: 'Police / Fire / Ambulance', number: '112', tone: 'danger' },
+      { label: 'Police', sub: 'All India', number: '100', tone: 'brand' },
+      { label: 'Women Helpline', sub: 'All India', number: '1091', tone: 'brand' },
+      { label: 'Ambulance', sub: 'All India', number: '108', tone: 'brand' },
+    ];
+
+    const SEVERITY_META = {
+      info: { icon: 'ℹ️', bar: 'border-l-brand-600', chip: 'bg-brand-500/10 text-brand-600 dark:text-brand-300' },
+      warning: { icon: '⚠️', bar: 'border-l-warn', chip: 'bg-warn/10 text-warn' },
+      danger: { icon: '🚨', bar: 'border-l-danger', chip: 'bg-danger/10 text-danger' },
+    };
+
+    const EMPTY_FORM = {
+      name: '',
+      aadhar: '',
+      phone: '',
+      emergencyContact: '',
+      from: '',
+      to: '',
+      address: '',
+    };
+
+    // SOS Demo Component
+    function SosDemo() {
+      const [progress, setProgress] = useState(0);
+      const [sent, setSent] = useState(false);
+      const raf = useRef(null);
+      const start = useRef(0);
+
+      const stop = () => {
+        if (raf.current) cancelAnimationFrame(raf.current);
+        raf.current = null;
+        if (!sent) setProgress(0);
+      };
+
+      const begin = () => {
+        if (sent) {
+          setSent(false);
+          setProgress(0);
+        }
+        start.current = performance.now();
+        const tick = (t) => {
+          const p = Math.min(1, (t - start.current) / 3000);
+          setProgress(p);
+          if (p >= 1) {
+            setSent(true);
+            raf.current = null;
+            return;
+          }
+          raf.current = requestAnimationFrame(tick);
+        };
+        raf.current = requestAnimationFrame(tick);
+      };
+
+      useEffect(() => () => stop(), []);
+
+      return (
+        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-xl shadow-slate-200/60 dark:border-slate-800 dark:bg-[#0b1f2e] dark:shadow-none">
+          <h4 className="font-display text-xl font-bold text-ink dark:text-white">Emergency SOS</h4>
+          <p className="mx-auto mt-2 max-w-xs text-sm text-slate-500 dark:text-slate-400">
+            In an emergency, press and hold the button below for 3 seconds.
+          </p>
+
+          <div className="my-8 flex justify-center">
+            <button
+              onMouseDown={begin}
+              onMouseUp={stop}
+              onMouseLeave={stop}
+              onTouchStart={(e) => { e.preventDefault(); begin(); }}
+              onTouchEnd={stop}
+              className={`sos-pulse relative flex h-36 w-36 select-none items-center justify-center rounded-full text-white transition-transform active:scale-95 ${
+                sent ? 'bg-emerald-600' : 'bg-danger'
+              }`}
+              aria-label="Hold to trigger demo SOS"
+            >
+              <svg className="absolute inset-0 -rotate-90" viewBox="0 0 100 100">
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="46"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.35)"
+                  strokeWidth="5"
+                  strokeDasharray={`${progress * 289} 289`}
+                  strokeLinecap="round"
+                />
+              </svg>
+              <span className="font-display text-3xl font-extrabold tracking-widest">
+                {sent ? '✓' : 'SOS'}
+              </span>
+            </button>
+          </div>
+
+          <p className="h-5 text-sm font-semibold text-slate-500 dark:text-slate-400">
+            {sent
+              ? 'Demo alert sent to your contacts.'
+              : progress > 0
+                ? `Hold… ${(3 - progress * 3).toFixed(1)}s`
+                : 'Press and hold to test'}
+          </p>
+        </div>
+      );
+    }
+
+    // Main App Component
+    function App() {
+      const [view, setView] = useState('landing'); // 'landing' | 'dashboard'
+      const [dark, setDark] = useState(false);
+      const [menuOpen, setMenuOpen] = useState(false);
+      const [tab, setTab] = useState('user'); // 'user' | 'admin'
+
+      const [users, setUsers] = useState([]);
+      const [sos, setSos] = useState([]);
+      const [alerts, setAlerts] = useState([]);
+
+      const [form, setForm] = useState({ ...EMPTY_FORM });
+      const [regStatus, setRegStatus] = useState('');
+      const [lastId, setLastId] = useState('');
+
+      const [lookupId, setLookupId] = useState('');
+      const [lookupResult, setLookupResult] = useState(null);
+
+      const [adminAuthed, setAdminAuthed] = useState(false);
+      const [adminPass, setAdminPass] = useState('');
+      const [adminStatus, setAdminStatus] = useState('');
+      const [newPass, setNewPass] = useState('');
+      const [securityStatus, setSecurityStatus] = useState('');
+      const [query, setQuery] = useState('');
+      const [alertDraft, setAlertDraft] = useState({ title: '', message: '', severity: 'info' });
+      const [alertStatus, setAlertStatus] = useState('');
+      const fileRef = useRef(null);
+
+      useEffect(() => {
+        const saved = localStorage.getItem(THEME_KEY);
+        const prefers = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const isDark = saved === 'dark' || (saved === null && prefers);
+        setDark(isDark);
+        document.documentElement.classList.toggle('dark', isDark);
+
+        setUsers(loadJSON(USERS_KEY, []));
+        setSos(loadJSON(SOS_KEY, []));
+        setAlerts(loadJSON(ALERTS_KEY, []));
+        ensureAdmin();
+      }, []);
+
+      const toggleTheme = () => {
+        const next = !dark;
+        setDark(next);
+        document.documentElement.classList.toggle('dark', next);
+        localStorage.setItem(THEME_KEY, next ? 'dark' : 'light');
+      };
+
+      const persistUsers = useCallback((next) => { setUsers(next); saveJSON(USERS_KEY, next); }, []);
+      const persistSos = useCallback((next) => { setSos(next); saveJSON(SOS_KEY, next); }, []);
+      const persistAlerts = useCallback((next) => { setAlerts(next); saveJSON(ALERTS_KEY, next); }, []);
+
+      const register = (e) => {
+        e.preventDefault();
+        if (!form.name.trim()) { setRegStatus('Name is required.'); return; }
+        const user = {
+          id: uuidv4(),
+          ...form,
+          name: form.name.trim(),
+          createdAt: new Date().toISOString(),
+        };
+        persistUsers([user, ...users]);
+        setLastId(user.id);
+        setForm({ ...EMPTY_FORM });
+        setRegStatus(`Registered. Your unique ID: ${user.id.slice(0, 8)}…`);
+      };
+
+      const triggerSos = async (user) => {
+        const coords = await getPosition();
+        const entry = {
+          id: uuidv4(),
+          userId: user.id,
+          name: user.name,
+          phone: user.phone,
+          emergencyContact: user.emergencyContact,
+          destination: user.to,
+          coords,
+          createdAt: new Date().toISOString(),
+        };
+        persistSos([entry, ...sos]);
+        setRegStatus(`SOS logged for ${user.name} • location: ${coords}`);
+      };
+
+      const removeUser = (id) => persistUsers(users.filter((u) => u.id !== id));
+
+      const doLookup = () => {
+        const q = lookupId.trim().toLowerCase();
+        if (!q) { setLookupResult(null); return; }
+        const found = users.find((u) => u.id.toLowerCase().startsWith(q) || u.id.toLowerCase() === q);
+        setLookupResult(found ?? 'none');
+      };
+
+      const loginAdmin = async () => {
+        const hash = await sha256(adminPass);
+        if (hash === localStorage.getItem(ADMIN_HASH_KEY)) {
+          setAdminAuthed(true);
+          setAdminPass('');
+          setAdminStatus('');
+        } else {
+          setAdminStatus('Incorrect password.');
+        }
+      };
+
+      const changePass = async () => {
+        if (!newPass) { setSecurityStatus('Enter a new password.'); return; }
+        localStorage.setItem(ADMIN_HASH_KEY, await sha256(newPass));
+        setNewPass('');
+        setSecurityStatus('Password updated.');
+      };
+
+      const broadcastAlert = (e) => {
+        e.preventDefault();
+        if (!alertDraft.title.trim() || !alertDraft.message.trim()) {
+          setAlertStatus('Title and message are required.');
+          return;
+        }
+        const item = {
+          id: uuidv4(),
+          title: alertDraft.title.trim(),
+          message: alertDraft.message.trim(),
+          severity: alertDraft.severity,
+          createdAt: new Date().toISOString(),
+        };
+        persistAlerts([item, ...alerts]);
+        setAlertDraft({ title: '', message: '', severity: 'info' });
+        setAlertStatus('Alert broadcast to all travelers.');
+      };
+
+      const importJSON = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const parsed = JSON.parse(String(reader.result));
+            if (Array.isArray(parsed)) {
+              persistUsers([...parsed, ...users]);
+              setAdminStatus(`Imported ${parsed.length} record(s).`);
+            } else if (parsed.users) {
+              persistUsers([...parsed.users, ...users]);
+              if (parsed.sos) persistSos([...parsed.sos, ...sos]);
+              setAdminStatus('Import complete.');
+            } else {
+              setAdminStatus('Unrecognised JSON shape.');
+            }
+          } catch {
+            setAdminStatus('Invalid JSON file.');
+          }
+        };
+        reader.readAsText(file);
+        e.target.value = '';
+      };
+
+      const filteredUsers = useMemo(() => {
+        const q = query.trim().toLowerCase();
+        if (!q) return users;
+        return users.filter(
+          (u) =>
+            u.name.toLowerCase().includes(q) ||
+            u.id.toLowerCase().includes(q) ||
+            (u.to || '').toLowerCase().includes(q)
+        );
+      }, [users, query]);
+
+      const inputCls = "mt-1.5 w-full rounded-lg border border-slate-200 bg-transparent px-3 py-2.5 text-[0.95rem] text-ink outline-none transition focus:border-brand-600 focus:ring-4 focus:ring-brand-600/10 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500";
+
+      return (
+        <div className="min-h-screen">
+          {/* Header */}
+          <header className="fixed inset-x-0 top-0 z-50 bg-white/90 shadow-sm backdrop-blur-md dark:bg-[#071424]/90 dark:border-b dark:border-slate-800">
+            <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+              <button onClick={() => setView('landing')} className="flex items-center gap-2 font-display text-2xl font-bold text-brand-600 dark:text-brand-400">
+                🛡️ TravelShield
+              </button>
+              <div className="hidden items-center gap-8 md:flex">
+                <a href="#features" onClick={() => setView('landing')} className="font-medium text-slate-600 transition-colors hover:text-brand-600 dark:text-slate-300 dark:hover:text-white">Features</a>
+                <a href="#how-it-works" onClick={() => setView('landing')} className="font-medium text-slate-600 transition-colors hover:text-brand-600 dark:text-slate-300 dark:hover:text-white">How It Works</a>
+                <a href="#testimonials" onClick={() => setView('landing')} className="font-medium text-slate-600 transition-colors hover:text-brand-600 dark:text-slate-300 dark:hover:text-white">Testimonials</a>
+                <button
+                  onClick={toggleTheme}
+                  className="rounded-lg bg-slate-100 p-2 text-ink transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                  aria-label="Toggle dark mode"
+                >
+                  {dark ? '☀️' : '🌙'}
+                </button>
+                <button
+                  onClick={() => { setView('dashboard'); setTab('user'); }}
+                  className="font-medium text-slate-600 transition-colors hover:text-brand-600 dark:text-slate-300 dark:hover:text-white"
+                >
+                  Dashboard
+                </button>
+                <button
+                  onClick={() => { setView('dashboard'); setTab('user'); }}
+                  className="rounded-lg bg-brand-600 px-5 py-2.5 font-semibold text-white shadow-md shadow-brand-600/25 transition-colors hover:bg-brand-700"
+                >
+                  Get Started
+                </button>
+              </div>
+              <div className="flex items-center gap-3 md:hidden">
+                <button
+                  onClick={toggleTheme}
+                  className="rounded-lg bg-slate-100 p-2 text-ink dark:bg-slate-800 dark:text-slate-100"
+                >
+                  {dark ? '☀️' : '🌙'}
+                </button>
+                <button
+                  onClick={() => setMenuOpen(!menuOpen)}
+                  className="text-ink dark:text-slate-100"
+                  aria-label="Toggle menu"
+                >
+                  {menuOpen ? '✕' : '☰'}
+                </button>
+              </div>
+            </nav>
+            {menuOpen && (
+              <div className="bg-white px-6 pb-4 shadow-lg md:hidden dark:bg-[#071424]">
+                <a href="#features" onClick={() => { setView('landing'); setMenuOpen(false); }} className="block py-2 text-slate-600 dark:text-slate-300">Features</a>
+                <a href="#how-it-works" onClick={() => { setView('landing'); setMenuOpen(false); }} className="block py-2 text-slate-600 dark:text-slate-300">How It Works</a>
+                <a href="#testimonials" onClick={() => { setView('landing'); setMenuOpen(false); }} className="block py-2 text-slate-600 dark:text-slate-300">Testimonials</a>
+                <button onClick={() => { setView('dashboard'); setTab('user'); setMenuOpen(false); }} className="block w-full py-2 text-left text-slate-600 dark:text-slate-300">Dashboard</button>
+                <button onClick={() => { setView('dashboard'); setTab('user'); setMenuOpen(false); }} className="mt-2 block w-full rounded-lg bg-brand-600 px-4 py-2 text-center font-semibold text-white">Get Started</button>
+              </div>
+            )}
+          </header>
+
+          {/* Body Views */}
+          {view === 'landing' ? (
+            <main className="pt-24">
+              {/* Hero */}
+              <section className="dot-grid py-20 text-center">
+                <div className="mx-auto max-w-4xl px-6">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-brand-100 bg-brand-50 px-4 py-1.5 text-sm font-semibold text-brand-700 dark:border-brand-900 dark:bg-brand-950 dark:text-brand-300">
+                    🛡️ Smart Tourist Safety Monitoring
+                  </span>
+                  <h1 className="mt-6 font-display text-4xl font-extrabold leading-tight tracking-tight text-ink sm:text-6xl dark:text-white">
+                    Travel Smarter, <span className="text-brand-600 dark:text-brand-400">Stay Safer</span>
+                  </h1>
+                  <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-600 dark:text-slate-300">
+                    Your personal safety companion for exploring the world with confidence. Get real-time alerts,
+                    emergency assistance, and local safety tips, all in one app.
+                  </p>
+                  <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+                    <button
+                      onClick={() => { setView('dashboard'); setTab('user'); }}
+                      className="group inline-flex items-center gap-2 rounded-lg bg-brand-600 px-8 py-3.5 font-bold text-white shadow-lg shadow-brand-600/25 transition-transform hover:scale-105 hover:bg-brand-700"
+                    >
+                      Get Started Free →
+                    </button>
+                    <a
+                      href="#features"
+                      className="rounded-lg border border-slate-200 bg-white px-8 py-3.5 font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                    >
+                      Learn More
+                    </a>
+                  </div>
+
+                  <dl className="mx-auto mt-16 grid max-w-2xl grid-cols-3 gap-6 border-t border-slate-200/80 pt-8 dark:border-slate-800">
+                    {[
+                      ['120+', 'Countries covered'],
+                      ['24/7', 'Emergency response'],
+                      ['4.9★', 'Traveler rating'],
+                    ].map(([v, k]) => (
+                      <div key={k}>
+                        <dt className="font-display text-2xl font-extrabold text-ink sm:text-3xl dark:text-white">{v}</dt>
+                        <dd className="mt-1 text-xs text-slate-500 sm:text-sm dark:text-slate-400">{k}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              </section>
+
+              {/* Features */}
+              <section id="features" className="bg-white py-24 dark:bg-[#0b1f2e]">
+                <div className="mx-auto max-w-6xl px-6">
+                  <div className="text-center">
+                    <h2 className="font-semibold uppercase tracking-widest text-brand-600 dark:text-brand-400">Core Features</h2>
+                    <h3 className="mt-3 font-display text-3xl font-extrabold text-ink sm:text-4xl dark:text-white">
+                      Everything You Need for a Secure Trip
+                    </h3>
+                  </div>
+                  <div className="mt-14 grid gap-8 md:grid-cols-3">
+                    {[
+                      { icon: '🔔', title: 'Real-time Safety Alerts', body: 'Receive instant notifications about local events, weather warnings, or safety concerns in your area.' },
+                      { icon: '🛟', title: 'One-Tap Emergency SOS', body: 'Instantly alert your emergency contacts and local authorities with your location with a single tap.' },
+                      { icon: '🗺️', title: 'Safe Zone Maps', body: 'Navigate new cities confidently with maps highlighting safe neighborhoods, verified hotels, and trusted services.' }
+                    ].map((f) => (
+                      <div key={f.title} className="rounded-2xl border border-slate-100 bg-slate-50/70 p-8 transition-all hover:-translate-y-1.5 hover:bg-white hover:shadow-xl dark:border-slate-800 dark:bg-slate-900/50 dark:hover:bg-slate-800">
+                        <div className="text-3xl">{f.icon}</div>
+                        <h4 className="mt-5 font-display text-xl font-bold text-ink dark:text-white">{f.title}</h4>
+                        <p className="mt-3 leading-relaxed text-slate-600 dark:text-slate-300">{f.body}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
+              {/* How it works */}
+              <section id="how-it-works" className="bg-slate-50 py-24 dark:bg-[#071424]">
+                <div className="mx-auto grid max-w-6xl items-center gap-16 px-6 lg:grid-cols-2">
+                  <div>
+                    <h2 className="font-semibold uppercase tracking-widest text-brand-600 dark:text-brand-400">How It Works</h2>
+                    <h3 className="mt-3 font-display text-3xl font-extrabold text-ink sm:text-4xl dark:text-white">
+                      Your Safety in 3 Simple Steps
+                    </h3>
+                    <ul className="mt-10 space-y-8">
+                      {[
+                        { strong: 'Set Up Your Profile.', body: 'Add your trip details and emergency contacts so we can provide personalized alerts.' },
+                        { strong: 'Explore with Peace of Mind.', body: 'Keep the app running in the background to receive alerts and access safety features.' },
+                        { strong: 'Get Help When Needed.', body: 'Use the SOS button to instantly connect with help if you are in an unsafe situation.' }
+                      ].map((s, i) => (
+                        <li key={s.strong} className="flex gap-5">
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-600 font-display text-lg font-bold text-white shadow-lg">
+                            {i + 1}
+                          </div>
+                          <p className="pt-1.5 text-slate-600 dark:text-slate-300">
+                            <strong className="text-ink dark:text-white">{s.strong}</strong> {s.body}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <SosDemo />
+                  </div>
+                </div>
+              </section>
+
+              {/* Testimonials */}
+              <section id="testimonials" className="bg-white py-24 dark:bg-[#0b1f2e]">
+                <div className="mx-auto max-w-6xl px-6">
+                  <div className="text-center">
+                    <h2 className="font-semibold uppercase tracking-widest text-brand-600 dark:text-brand-400">Testimonials</h2>
+                    <h3 className="mt-3 font-display text-3xl font-extrabold text-ink sm:text-4xl dark:text-white">
+                      Trusted by Travelers Worldwide
+                    </h3>
+                  </div>
+                  <div className="mt-14 grid gap-8 md:grid-cols-3">
+                    {[
+                      { quote: 'This app was a lifesaver during my solo trip through Southeast Asia. The local alerts gave me so much peace of mind!', name: 'Anjali Sharma', role: 'Solo Traveler', initials: 'AS' },
+                      { quote: 'The emergency contact feature is brilliant. My family felt much more at ease knowing they could be alerted if something went wrong.', name: 'Rohan Mehta', role: 'Family Vacationer', initials: 'RM' },
+                      { quote: 'Navigating a new city was so much easier with the safe zone maps. I discovered amazing local spots I would have otherwise missed.', name: 'Priya Verma', role: 'Backpacker', initials: 'PV' }
+                    ].map((t) => (
+                      <figure key={t.name} className="flex flex-col justify-between rounded-2xl border border-slate-100 bg-slate-50/70 p-8 dark:border-slate-800 dark:bg-slate-900/50">
+                        <blockquote className="leading-relaxed text-slate-700 dark:text-slate-300">“{t.quote}”</blockquote>
+                        <figcaption className="mt-6 flex items-center gap-4">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-600 font-bold text-white">
+                            {t.initials}
+                          </div>
+                          <div>
+                            <p className="font-bold text-ink dark:text-white">{t.name}</p>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">{t.role}</p>
+                          </div>
+                        </figcaption>
+                      </figure>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
+              {/* Footer */}
+              <footer className="bg-ink py-14 text-slate-300 dark:bg-[#030b14]">
+                <div className="mx-auto max-w-6xl px-6 text-center sm:text-left">
+                  <div className="grid gap-10 sm:grid-cols-3">
+                    <div>
+                      <h4 className="font-display text-xl font-bold text-white">🛡️ TravelShield</h4>
+                      <p className="mt-3 text-sm text-slate-400">Your safety, our priority.</p>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white">Quick Links</h4>
+                      <ul className="mt-3 space-y-2 text-sm">
+                        <li><button onClick={() => setView('landing')} className="hover:text-white">Home</button></li>
+                        <li><button onClick={() => { setView('dashboard'); setTab('user'); }} className="hover:text-white">Dashboard</button></li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white">Legal</h4>
+                      <p className="mt-3 text-sm text-slate-400">Privacy Policy &bull; Terms of Service</p>
+                    </div>
+                  </div>
+                  <div className="mt-10 border-t border-white/10 pt-6 text-center text-sm text-slate-400">
+                    © {new Date().getFullYear()} TravelShield. All Rights Reserved.
+                  </div>
+                </div>
+              </footer>
+            </main>
+          ) : (
+            /* Dashboard View */
+            <div className="mx-auto max-w-5xl px-5 pt-28 pb-12">
+              <header className="relative border-b border-slate-200 pb-4 text-center dark:border-slate-800">
+                <h1 className="font-display text-3xl font-extrabold text-brand-600 dark:text-brand-400">TravelShield Dashboard</h1>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Smart Tourist Safety Monitoring System</p>
+
+                <nav className="mt-5 flex flex-wrap items-center justify-center gap-2">
+                  <button
+                    onClick={() => setView('landing')}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-2 text-sm font-medium text-ink transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100"
+                  >
+                    ← Back to Home
+                  </button>
+                  {['user', 'admin'].map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setTab(t)}
+                      className={`rounded-lg px-3.5 py-2 text-sm font-semibold transition ${
+                        tab === t
+                          ? 'bg-brand-600 text-white shadow-md'
+                          : 'bg-slate-100 text-ink dark:bg-slate-800 dark:text-slate-100'
+                      }`}
+                    >
+                      {t === 'user' ? 'User Dashboard' : 'Admin Dashboard'}
+                    </button>
+                  ))}
+                </nav>
+              </header>
+
+              {tab === 'user' ? (
+                <main className="mt-6 space-y-6">
+                  {/* Alerts */}
+                  <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
+                    <h2 className="font-display text-lg font-bold">📢 Local Safety Alerts</h2>
+                    <div className="mt-3 space-y-2">
+                      {alerts.length === 0 ? (
+                        <p className="rounded-lg border border-dashed border-slate-200 p-4 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                          No active alerts right now. You are all clear.
+                        </p>
+                      ) : (
+                        alerts.map((a) => {
+                          const meta = SEVERITY_META[a.severity] || SEVERITY_META.info;
+                          return (
+                            <div key={a.id} className={`rounded-lg border border-slate-100 border-l-4 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-900/40 ${meta.bar}`}>
+                              <div className="flex items-center justify-between gap-3">
+                                <p className="font-bold">{meta.icon} {a.title}</p>
+                                <span className={`rounded-full px-2 py-0.5 text-xs font-bold uppercase ${meta.chip}`}>{a.severity}</span>
+                              </div>
+                              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{a.message}</p>
+                              <p className="mt-1 text-xs text-slate-400">{formatDate(a.createdAt)}</p>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </section>
+
+                  {/* Register */}
+                  <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
+                    <h2 className="font-display text-lg font-bold">Register Tourist</h2>
+                    <form onSubmit={register} autoComplete="off" className="mt-3">
+                      <label className="block text-sm font-medium text-slate-600 dark:text-slate-300">
+                        Full Name *
+                        <input className={inputCls} required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                      </label>
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                        <label className="block text-sm font-medium text-slate-600 dark:text-slate-300">
+                          Aadhar (optional)
+                          <input className={inputCls} maxLength={12} value={form.aadhar} onChange={(e) => setForm({ ...form, aadhar: e.target.value.replace(/\D/g, '') })} />
+                        </label>
+                        <label className="block text-sm font-medium text-slate-600 dark:text-slate-300">
+                          Phone
+                          <input className={inputCls} type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                        </label>
+                        <label className="block text-sm font-medium text-slate-600 dark:text-slate-300">
+                          Emergency Contact
+                          <input className={inputCls} type="tel" value={form.emergencyContact} onChange={(e) => setForm({ ...form, emergencyContact: e.target.value })} />
+                        </label>
+                        <label className="block text-sm font-medium text-slate-600 dark:text-slate-300">
+                          From (city)
+                          <input className={inputCls} value={form.from} onChange={(e) => setForm({ ...form, from: e.target.value })} />
+                        </label>
+                      </div>
+                      <label className="mt-3 block text-sm font-medium text-slate-600 dark:text-slate-300">
+                        Destination to visit
+                        <input className={inputCls} value={form.to} onChange={(e) => setForm({ ...form, to: e.target.value })} />
+                      </label>
+                      <label className="mt-3 block text-sm font-medium text-slate-600 dark:text-slate-300">
+                        Address / Notes
+                        <textarea className={`${inputCls} min-h-[72px]`} rows={2} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+                      </label>
+                      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                        <button type="submit" className="flex-1 rounded-lg bg-brand-600 py-2.5 font-semibold text-white hover:bg-brand-700">Register & Generate ID</button>
+                        <button type="button" onClick={() => downloadJSON('travelshield_db.json', { users, sos, alerts })} className="rounded-lg bg-slate-100 px-4 py-2.5 font-semibold text-ink hover:bg-slate-200 dark:bg-slate-800 dark:text-white">Download DB</button>
+                      </div>
+                    </form>
+                    {regStatus && <p className="mt-2 text-sm font-medium text-brand-600 dark:text-brand-400">{regStatus}</p>}
+                    {lastId && (
+                      <div className="mt-3 flex items-center gap-2 rounded-lg bg-brand-50 p-3 text-sm dark:bg-slate-800">
+                        <span className="font-semibold text-brand-700 dark:text-brand-300">Your Unique ID:</span>
+                        <code className="font-mono text-xs">{lastId}</code>
+                        <button onClick={async () => { const ok = await copyToClipboard(lastId); setRegStatus(ok ? 'ID copied!' : 'Failed'); }} className="ml-auto rounded bg-white px-2.5 py-1 text-xs font-semibold shadow-sm dark:bg-slate-700">Copy</button>
+                      </div>
+                    )}
+                  </section>
+
+                  {/* Lookup */}
+                  <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
+                    <h2 className="font-display text-lg font-bold">ID Lookup</h2>
+                    <div className="mt-3 flex gap-2">
+                      <input className={`${inputCls} mt-0`} placeholder="Enter unique ID" value={lookupId} onChange={(e) => setLookupId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && doLookup()} />
+                      <button onClick={doLookup} className="rounded-lg bg-brand-600 px-5 font-semibold text-white hover:bg-brand-700">Lookup</button>
+                    </div>
+                    {lookupResult === 'none' && <p className="mt-3 text-sm font-medium text-danger">No record found.</p>}
+                    {lookupResult && lookupResult !== 'none' && (
+                      <dl className="mt-3 grid gap-2 rounded-lg border border-slate-100 bg-slate-50 p-4 text-sm sm:grid-cols-2 dark:border-slate-800 dark:bg-slate-900/50">
+                        <div><dt className="text-xs uppercase text-slate-400">Name</dt><dd className="font-semibold">{lookupResult.name}</dd></div>
+                        <div><dt className="text-xs uppercase text-slate-400">Phone</dt><dd className="font-semibold">{lookupResult.phone || '—'}</dd></div>
+                        <div><dt className="text-xs uppercase text-slate-400">Emergency</dt><dd className="font-semibold">{lookupResult.emergencyContact || '—'}</dd></div>
+                        <div><dt className="text-xs uppercase text-slate-400">Destination</dt><dd className="font-semibold">{lookupResult.to || '—'}</dd></div>
+                      </dl>
+                    )}
+                  </section>
+
+                  {/* Helplines */}
+                  <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
+                    <h2 className="font-display text-lg font-bold">🚨 Quick Helplines</h2>
+                    <div className="mt-3 space-y-2">
+                      {HELPLINES.map((h) => (
+                        <div key={h.number} className="flex items-center justify-between rounded-lg border border-slate-100 p-3 dark:border-slate-800">
+                          <div>
+                            <p className="font-bold">{h.label}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{h.sub}</p>
+                          </div>
+                          <a href={`tel:${h.number}`} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white ${h.tone === 'danger' ? 'bg-danger' : 'bg-brand-600'}`}>Call {h.number}</a>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  {/* Registered Tourists */}
+                  <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
+                    <h2 className="font-display text-lg font-bold">Registered Tourists (Local Browser Data)</h2>
+                    <div className="mt-3 space-y-2">
+                      {users.length === 0 ? (
+                        <p className="text-sm text-slate-500">No users registered yet.</p>
+                      ) : (
+                        users.map((u) => (
+                          <div key={u.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-100 p-3 dark:border-slate-800">
+                            <div>
+                              <p className="font-bold">{u.name} <span className="font-mono text-xs font-normal text-slate-400">({u.id.slice(0, 8)})</span></p>
+                              <p className="text-xs text-slate-500">Dest: {u.to || '—'} &bull; Reg: {formatDate(u.createdAt)}</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button onClick={() => triggerSos(u)} className="rounded bg-danger px-3 py-1.5 text-xs font-bold text-white shadow-sm">SOS</button>
+                              <button onClick={() => removeUser(u.id)} className="rounded bg-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-200">Delete</button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </section>
+                </main>
+              ) : (
+                /* Admin Tab */
+                <aside className="mt-6 space-y-6">
+                  {!adminAuthed ? (
+                    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
+                      <h2 className="font-display text-lg font-bold">Admin Login</h2>
+                      <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                        Default password: <strong className="text-brand-600 dark:text-brand-400">admin123</strong>
+                      </p>
+                      <div className="mt-3 flex gap-2">
+                        <input className={`${inputCls} mt-0`} type="password" placeholder="Admin password" value={adminPass} onChange={(e) => setAdminPass(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && loginAdmin()} />
+                        <button onClick={loginAdmin} className="rounded-lg bg-brand-600 px-5 font-semibold text-white">Login</button>
+                      </div>
+                      {adminStatus && <p className="mt-2 text-sm font-medium text-danger">{adminStatus}</p>}
+                    </section>
+                  ) : (
+                    <>
+                      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
+                        <div className="flex items-center justify-between">
+                          <h2 className="font-display text-lg font-bold">Admin Overview</h2>
+                          <button onClick={() => setAdminAuthed(false)} className="rounded bg-danger px-3 py-1 text-sm font-bold text-white">Logout</button>
+                        </div>
+                        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                          <div className="rounded-lg border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                            <p className="font-display text-2xl font-extrabold text-brand-600">{users.length}</p>
+                            <p className="text-xs uppercase text-slate-400">Registered</p>
+                          </div>
+                          <div className="rounded-lg border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                            <p className="font-display text-2xl font-extrabold text-danger">{sos.length}</p>
+                            <p className="text-xs uppercase text-slate-400">SOS Logs</p>
+                          </div>
+                          <div className="rounded-lg border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                            <p className="font-display text-2xl font-extrabold text-warn">{alerts.length}</p>
+                            <p className="text-xs uppercase text-slate-400">Active Alerts</p>
+                          </div>
+                        </div>
+                        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                          <input className={`${inputCls} mt-0 flex-1`} placeholder="Search users" value={query} onChange={(e) => setQuery(e.target.value)} />
+                          <button onClick={() => downloadJSON('users.json', users)} className="rounded bg-slate-100 px-3 py-2 text-xs font-semibold dark:bg-slate-800">Export Users</button>
+                          <button onClick={() => downloadJSON('sos_logs.json', sos)} className="rounded bg-slate-100 px-3 py-2 text-xs font-semibold dark:bg-slate-800">Export SOS</button>
+                        </div>
+                      </section>
+
+                      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
+                        <h3 className="font-display text-base font-bold">Broadcast Alert</h3>
+                        <form onSubmit={broadcastAlert} className="mt-3 space-y-3">
+                          <div className="flex gap-2">
+                            <input className={`${inputCls} mt-0 flex-1`} placeholder="Alert Title" value={alertDraft.title} onChange={(e) => setAlertDraft({ ...alertDraft, title: e.target.value })} />
+                            <select className={`${inputCls} mt-0 w-32`} value={alertDraft.severity} onChange={(e) => setAlertDraft({ ...alertDraft, severity: e.target.value })}>
+                              <option value="info">Info</option>
+                              <option value="warning">Warning</option>
+                              <option value="danger">Danger</option>
+                            </select>
+                          </div>
+                          <textarea className={`${inputCls} min-h-[60px]`} placeholder="Alert details..." value={alertDraft.message} onChange={(e) => setAlertDraft({ ...alertDraft, message: e.target.value })} />
+                          <button type="submit" className="w-full rounded-lg bg-brand-600 py-2.5 font-semibold text-white hover:bg-brand-700">Broadcast Alert</button>
+                        </form>
+                        {alertStatus && <p className="mt-2 text-sm font-medium text-brand-600">{alertStatus}</p>}
+                      </section>
+
+                      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
+                        <h3 className="font-display text-base font-bold">Security</h3>
+                        <div className="mt-3 flex gap-2">
+                          <input className={`${inputCls} mt-0`} type="password" placeholder="New admin password" value={newPass} onChange={(e) => setNewPass(e.target.value)} />
+                          <button onClick={changePass} className="rounded-lg bg-brand-600 px-4 font-semibold text-white">Update</button>
+                        </div>
+                        {securityStatus && <p className="mt-2 text-sm font-medium text-brand-600">{securityStatus}</p>}
+                      </section>
+                    </>
+                  )}
+                </aside>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
