@@ -1,0 +1,10 @@
+{
+  "name": "travelshield-safety",
+  "version": "1.0.0",
+  "description": "Smart Tourist Safety Monitoring System",
+  "main": "index.html",
+  "scripts": {
+    "build": "echo 'Static build complete'",
+    "start": "npx serve ."
+  }
+}
