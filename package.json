@@ -4,7 +4,7 @@
   "description": "Smart Tourist Safety Monitoring System",
   "main": "index.html",
   "scripts": {
-    "build": "echo 'Static build complete'",
+    "build": "node -e \"const fs=require('fs'); fs.mkdirSync('dist', {recursive:true}); fs.copyFileSync('index.html', 'dist/index.html');\"",
     "start": "npx serve ."
   }
 }
