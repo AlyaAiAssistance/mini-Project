@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>TravelShield Loader Test</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@800&family=Sora:wght@800&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      background-color: #071424;
+      color: white;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      gap: 3rem;
+    }
+    .absolute { position: absolute; }
+    .inline-block { display: inline-block; }
+    .loader {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      margin: 0.25em 0;
+    }
+    .dash {
+      animation: dashArray 2s ease-in-out infinite,
+        dashOffset 2s linear infinite;
+    }
+    .spin {
+      animation: spinDashArray 2s ease-in-out infinite,
+        spin 8s ease-in-out infinite,
+        dashOffset 2s linear infinite;
+      transform-origin: center;
+    }
+    @keyframes dashArray {
+      0% { stroke-dasharray: 0 1 359 0; }
+      50% { stroke-dasharray: 0 359 1 0; }
+      100% { stroke-dasharray: 359 1 0 0; }
+    }
+    @keyframes spinDashArray {
+      0% { stroke-dasharray: 270 90; }
+      50% { stroke-dasharray: 0 360; }
+      100% { stroke-dasharray: 270 90; }
+    }
+    @keyframes dashOffset {
+      0% { stroke-dashoffset: 365; }
+      100% { stroke-dashoffset: 5; }
+    }
+    @keyframes spin {
+      0% { rotate: 0deg; }
+      12.5%, 25% { rotate: 270deg; }
+      37.5%, 50% { rotate: 540deg; }
+      62.5%, 75% { rotate: 810deg; }
+      87.5%, 100% { rotate: 1080deg; }
+    }
+    .letter-svg {
+      width: 38px;
+      height: 38px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Shared Defs -->
+  <svg height="0" width="0" class="absolute">
+    <defs>
+      <linearGradient id="b" x1="0" y1="62" x2="0" y2="2" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#973BED"></stop>
+        <stop stop-color="#007CFF" offset="1"></stop>
+      </linearGradient>
+      <linearGradient id="c" x1="0" y1="64" x2="0" y2="0" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#FFC800"></stop>
+        <stop stop-color="#F0F" offset="1"></stop>
+        <animateTransform repeatCount="indefinite" keySplines=".42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1" keyTimes="0; 0.125; 0.25; 0.375; 0.5; 0.625; 0.75; 0.875; 1" dur="8s" values="0 32 32;-270 32 32;-270 32 32;-540 32 32;-540 32 32;-810 32 32;-810 32 32;-1080 32 32;-1080 32 32" type="rotate" attributeName="gradientTransform"></animateTransform>
+      </linearGradient>
+      <linearGradient id="d" x1="0" y1="62" x2="0" y2="2" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#00E0ED"></stop>
+        <stop stop-color="#00DA72" offset="1"></stop>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <h2 style="color: #94a3b8;">TravelShield SVG Path Loader</h2>
+  <div class="loader">
+    <!-- T -->
+    <svg viewBox="0 0 64 64" class="letter-svg inline-block"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#b)" d="M 10,14 H 54 M 32,14 V 54" class="dash" pathLength="360"></path></svg>
+    <!-- R -->
+    <svg viewBox="0 0 64 64" class="letter-svg inline-block"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#c)" d="M 14,54 V 14 H 36 C 48,14 48,30 36,30 H 14 M 30,30 L 48,54" class="spin" pathLength="360"></path></svg>
+    <!-- A -->
+    <svg viewBox="0 0 64 64" class="letter-svg inline-block"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#d)" d="M 10,54 L 32,14 L 54,54 M 19,38 H 45" class="dash" pathLength="360"></path></svg>
+    <!-- V -->
+    <svg viewBox="0 0 64 64" class="letter-svg inline-block"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#b)" d="M 10,14 L 32,54 L 54,14" class="dash" pathLength="360"></path></svg>
+    <!-- E -->
+    <svg viewBox="0 0 64 64" class="letter-svg inline-block"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#c)" d="M 50,14 H 14 V 54 H 50 M 14,34 H 40" class="spin" pathLength="360"></path></svg>
+    <!-- L -->
+    <svg viewBox="0 0 64 64" class="letter-svg inline-block"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#d)" d="M 14,14 V 54 H 50" class="dash" pathLength="360"></path></svg>
+
+    <div style="width: 14px;"></div>
+
+    <!-- S -->
+    <svg viewBox="0 0 64 64" class="letter-svg inline-block"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#b)" d="M 46,20 C 46,12 18,12 18,25 C 18,38 46,36 46,47 C 46,58 18,58 18,50" class="dash" pathLength="360"></path></svg>
+    <!-- H -->
+    <svg viewBox="0 0 64 64" class="letter-svg inline-block"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#c)" d="M 14,14 V 54 M 50,14 V 54 M 14,34 H 50" class="spin" pathLength="360"></path></svg>
+    <!-- I -->
+    <svg viewBox="0 0 64 64" class="letter-svg inline-block"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#d)" d="M 32,14 V 54" class="dash" pathLength="360"></path></svg>
+    <!-- E -->
+    <svg viewBox="0 0 64 64" class="letter-svg inline-block"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#b)" d="M 50,14 H 14 V 54 H 50 M 14,34 H 40" class="dash" pathLength="360"></path></svg>
+    <!-- L -->
+    <svg viewBox="0 0 64 64" class="letter-svg inline-block"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#c)" d="M 14,14 V 54 H 50" class="spin" pathLength="360"></path></svg>
+    <!-- D -->
+    <svg viewBox="0 0 64 64" class="letter-svg inline-block"><path stroke-linejoin="round" stroke-linecap="round" stroke-width="8" stroke="url(#d)" d="M 14,14 V 54 H 30 C 48,54 48,14 30,14 Z" class="dash" pathLength="360"></path></svg>
+  </div>
+
+</body>
+</html>
