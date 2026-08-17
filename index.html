@@ -54,7 +54,116 @@
   <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
+  <!-- Three.js & GSAP Animation Suite CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
   <style>
+    /* Sharpness & Global GPU Smoothing */
+    *, *::before, *::after {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+      box-sizing: border-box;
+    }
+    img, svg {
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+    }
+
+    /* 3D Perspective and Holographic Glows */
+    .perspective-container {
+      perspective: 1200px;
+    }
+    .tilt-card-3d {
+      transform-style: preserve-3d;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      transition: transform 0.18s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+      will-change: transform;
+      position: relative;
+    }
+    .tilt-card-3d:hover {
+      box-shadow: 0 25px 50px -12px rgba(7, 101, 214, 0.25), 0 0 25px 2px rgba(0, 224, 237, 0.18);
+    }
+    .dark .tilt-card-3d:hover {
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px 2px rgba(56, 189, 248, 0.28);
+    }
+    .depth-1 { transform: translateZ(16px); backface-visibility: hidden; }
+    .depth-2 { transform: translateZ(30px); backface-visibility: hidden; }
+    .depth-3 { transform: translateZ(48px); backface-visibility: hidden; }
+
+    /* Interactive Specular Glare overlay */
+    .card-glare {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      border-radius: inherit;
+      background: radial-gradient(circle 260px at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255, 255, 255, 0.22), transparent 70%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      mix-blend-mode: overlay;
+      z-index: 5;
+    }
+    .tilt-card-3d:hover .card-glare {
+      opacity: 1;
+    }
+
+    /* 3D Floating Keyframes */
+    @keyframes floatHeroShield {
+      0%, 100% { transform: translateY(0px) rotateY(0deg) rotateX(0deg); }
+      25% { transform: translateY(-8px) rotateY(4deg) rotateX(2deg); }
+      50% { transform: translateY(-14px) rotateY(0deg) rotateX(-2deg); }
+      75% { transform: translateY(-6px) rotateY(-4deg) rotateX(1deg); }
+    }
+    .animate-float-hero {
+      animation: floatHeroShield 7s ease-in-out infinite;
+      transform-style: preserve-3d;
+    }
+
+    @keyframes pulseHoloGlow {
+      0%, 100% { filter: drop-shadow(0 0 15px rgba(7, 101, 214, 0.4)); }
+      50% { filter: drop-shadow(0 0 35px rgba(0, 224, 237, 0.8)); }
+    }
+    .holo-glow {
+      animation: pulseHoloGlow 4s ease-in-out infinite;
+    }
+
+    /* 3D Dynamic Cursor Spotlight */
+    #cursor-spotlight {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 480px;
+      height: 480px;
+      pointer-events: none;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(7, 101, 214, 0.14) 0%, rgba(0, 224, 237, 0.05) 40%, transparent 70%);
+      transform: translate3d(-50%, -50%, 0);
+      z-index: 1;
+      transition: opacity 0.3s ease;
+      mix-blend-mode: screen;
+      will-change: transform;
+    }
+    .dark #cursor-spotlight {
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, rgba(151, 59, 237, 0.07) 45%, transparent 75%);
+    }
+
+    /* Animated 3D Radar Wave */
+    @keyframes radarWave3D {
+      0% { transform: scale(0.6) translateZ(0); opacity: 0.9; }
+      100% { transform: scale(2.2) translateZ(40px); opacity: 0; }
+    }
+    .radar-wave-ring {
+      position: absolute;
+      inset: -15px;
+      border-radius: 50%;
+      border: 2px solid rgba(0, 224, 237, 0.6);
+      animation: radarWave3D 3s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
+      pointer-events: none;
+    }
+
     @keyframes pulseSoft {
       0%, 100% { transform: scale(1); opacity: 1; }
       50% { transform: scale(1.04); opacity: 0.9; }
@@ -1509,6 +1618,9 @@
   </style>
 </head>
 <body class="bg-slate-50 text-ink antialiased transition-colors dark:bg-[#071424] dark:text-slate-100">
+  <!-- Interactive 3D Cursor Spotlight -->
+  <div id="cursor-spotlight"></div>
+
   <!-- Uiverse.io SVG Background Pattern (jaykdoe) -->
   <div class="pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-40 dark:opacity-25 svg-bg-pattern-overlay">
     <svg id="uiverse-bg-svg" data-name="Layer 57" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 2560.44 2418.3" class="w-full h-full">
@@ -1897,18 +2009,21 @@
       );
     }
 
-    // 21st.dev Forest ASCII / Pixel Art Background Canvas Effect
+    // 21st.dev Forest ASCII / Pixel Art Background Canvas Effect (Lightweight & Intersection-Observed)
     function AsciiForestCanvas() {
       const canvasRef = useRef(null);
 
       useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { alpha: true });
         if (!ctx) return;
 
         let animationFrameId;
+        let isVisible = true;
         let time = 0;
+        let lastFrameTime = 0;
+        const targetFpsInterval = 1000 / 30; // Smooth 30fps ASCII tick saves ~70% CPU while visually identical
         const forestChars = ["█", "▓", "▒", "░", "▲", "↟", "🌲", "✦", "*", "+", "."];
 
         const resize = () => {
@@ -1919,16 +2034,34 @@
         };
 
         resize();
-        window.addEventListener('resize', resize);
+        window.addEventListener('resize', resize, { passive: true });
 
-        const render = () => {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            isVisible = entry.isIntersecting;
+            if (isVisible && !animationFrameId) {
+              animationFrameId = requestAnimationFrame(render);
+            }
+          });
+        }, { threshold: 0.05 });
+
+        observer.observe(canvas);
+
+        const render = (now) => {
+          if (!isVisible) {
+            animationFrameId = null;
+            return;
+          }
+
+          animationFrameId = requestAnimationFrame(render);
+
+          if (now - lastFrameTime < targetFpsInterval) return;
+          lastFrameTime = now;
+
           time += 1.2;
           const width = canvas.width;
           const height = canvas.height;
-          if (!width || !height) {
-            animationFrameId = requestAnimationFrame(render);
-            return;
-          }
+          if (!width || !height) return;
 
           ctx.clearRect(0, 0, width, height);
           const cellSize = 10;
@@ -1968,15 +2101,14 @@
               }
             }
           }
-
-          animationFrameId = requestAnimationFrame(render);
         };
 
-        render();
+        animationFrameId = requestAnimationFrame(render);
 
         return () => {
+          observer.disconnect();
           window.removeEventListener('resize', resize);
-          cancelAnimationFrame(animationFrameId);
+          if (animationFrameId) cancelAnimationFrame(animationFrameId);
         };
       }, []);
 
@@ -2100,6 +2232,583 @@
       );
     }
 
+    // Impressive High-Tech 3D Vector Logo for TravelShield
+    function TravelShieldLogo({ size = 36, className = "" }) {
+      return (
+        <div className={`relative inline-flex items-center justify-center shrink-0 transition-transform duration-300 hover:scale-105 ${className}`} style={{ width: size, height: size }}>
+          <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_12px_rgba(7,101,214,0.45)] dark:drop-shadow-[0_0_16px_rgba(0,224,237,0.65)]">
+            <defs>
+              <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#38bdf8" />
+                <stop offset="45%" stopColor="#0765d6" />
+                <stop offset="100%" stopColor="#1e3a8a" />
+              </linearGradient>
+              <linearGradient id="shieldSheen" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#ffffff" stopOpacity="0.85" />
+                <stop offset="50%" stopColor="#38bdf8" stopOpacity="0.25" />
+                <stop offset="100%" stopColor="#00E0ED" stopOpacity="0" />
+              </linearGradient>
+              <linearGradient id="goldStar" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#fef08a" />
+                <stop offset="50%" stopColor="#f59e0b" />
+                <stop offset="100%" stopColor="#d97706" />
+              </linearGradient>
+              <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
+            {/* Outer Shield Outline */}
+            <path d="M50 6 L88 20 C88 58 50 93 50 93 C50 93 12 58 12 20 Z" fill="url(#shieldGrad)" stroke="#67e8f9" strokeWidth="2.5" strokeLinejoin="round" />
+            {/* Specular Highlight Sheen */}
+            <path d="M50 9 L83 22 C83 52 50 86 50 86 C50 86 50 9 50 9 Z" fill="url(#shieldSheen)" />
+            {/* Radar Perimeter Pulse Ring */}
+            <circle cx="50" cy="46" r="19" fill="none" stroke="#ffffff" strokeWidth="1.8" strokeDasharray="3 3" opacity="0.8" />
+            <circle cx="50" cy="46" r="11" fill="#071a2e" stroke="#38bdf8" strokeWidth="2" />
+            {/* Central 8-Point Compass / Safety Star */}
+            <polygon points="50,37 53,43 59,46 53,49 50,55 47,49 41,46 47,43" fill="url(#goldStar)" filter="url(#neonGlow)" />
+            {/* Glowing Beacon Core */}
+            <circle cx="50" cy="46" r="2.8" fill="#ffffff" />
+          </svg>
+        </div>
+      );
+    }
+
+    // 3D Glassmorphic Emoji Badge (Impressive Floating Glow Orb)
+    function Emoji3DBadge({ emoji, glowColor = 'cyan', size = 'md', className = '' }) {
+      const glowMap = {
+        cyan: 'from-cyan-500/20 to-blue-600/20 border-cyan-400/40 shadow-[0_0_20px_rgba(0,224,237,0.35)]',
+        amber: 'from-amber-500/20 to-orange-600/20 border-amber-400/40 shadow-[0_0_20px_rgba(245,158,11,0.35)]',
+        rose: 'from-rose-500/20 to-red-600/20 border-rose-400/40 shadow-[0_0_20px_rgba(244,63,94,0.35)]',
+        blue: 'from-blue-500/20 to-indigo-600/20 border-blue-400/40 shadow-[0_0_20px_rgba(59,130,246,0.35)]',
+        emerald: 'from-emerald-500/20 to-teal-600/20 border-emerald-400/40 shadow-[0_0_20px_rgba(16,185,129,0.35)]',
+      };
+      const sizeMap = {
+        sm: 'w-8 h-8 text-base',
+        md: 'w-12 h-12 text-2xl',
+        lg: 'w-14 h-14 text-3xl',
+      };
+
+      return (
+        <div className={`relative inline-flex items-center justify-center rounded-2xl bg-gradient-to-br backdrop-blur-md border ${glowMap[glowColor] || glowMap.cyan} ${sizeMap[size] || sizeMap.md} shrink-0 transition-transform duration-300 hover:scale-110 hover:-translate-y-0.5 ${className}`}>
+          <span className="select-none filter drop-shadow-[0_2px_6px_rgba(0,0,0,0.3)]">{emoji}</span>
+        </div>
+      );
+    }
+
+    // 3D Mouse Tilt Card Wrapper with Specular Glare (Hardware-Accelerated & Zero Re-render Overhead)
+    function TiltCard({ children, className = '' }) {
+      const cardRef = useRef(null);
+      const rafRef = useRef(null);
+
+      const handleMouseMove = (e) => {
+        const card = cardRef.current;
+        if (!card) return;
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        const rotateX = ((y - centerY) / centerY) * -7;
+        const rotateY = ((x - centerX) / centerX) * 7;
+        const mouseXPercent = (x / rect.width) * 100;
+        const mouseYPercent = (y / rect.height) * 100;
+
+        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        rafRef.current = requestAnimationFrame(() => {
+          card.style.transform = `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) scale3d(1.015, 1.015, 1.015)`;
+          card.style.setProperty('--mouse-x', `${mouseXPercent.toFixed(1)}%`);
+          card.style.setProperty('--mouse-y', `${mouseYPercent.toFixed(1)}%`);
+        });
+      };
+
+      const handleMouseLeave = () => {
+        const card = cardRef.current;
+        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        if (card) {
+          card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+        }
+      };
+
+      return (
+        <div
+          ref={cardRef}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+          className={`tilt-card-3d relative overflow-hidden ${className}`}
+        >
+          <div className="card-glare pointer-events-none" />
+          {children}
+        </div>
+      );
+    }
+
+    // Interactive Three.js 3D Holographic Globe & Shield Stage (Ultra Sharp & Lightweight)
+    function Interactive3DGlobe({ isDark }) {
+      const mountRef = useRef(null);
+
+      useEffect(() => {
+        const container = mountRef.current;
+        if (!container || typeof THREE === 'undefined') return;
+
+        const width = container.clientWidth || 500;
+        const height = container.clientHeight || 420;
+
+        // Scene, Camera, Renderer (Responsive Camera Position)
+        const initialCameraZ = width < 480 ? 13.8 : width < 768 ? 12.4 : 11.2;
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+        camera.position.z = initialCameraZ;
+
+        const renderer = new THREE.WebGLRenderer({
+          alpha: true,
+          antialias: true,
+          powerPreference: 'high-performance',
+          precision: 'highp',
+        });
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        container.appendChild(renderer.domElement);
+
+        // Root Group
+        const rootGroup = new THREE.Group();
+        scene.add(rootGroup);
+
+        const globeGroup = new THREE.Group();
+        rootGroup.add(globeGroup);
+
+        // Primary Colors
+        const getColors = (dark) => ({
+          primary: dark ? 0x00E0ED : 0x0765d6,
+          secondary: dark ? 0x38bdf8 : 0x3b82f6,
+          accent: dark ? 0x973BED : 0x1d4ed8,
+          dots: dark ? 0x67e8f9 : 0x2563eb,
+          beacon: dark ? 0xFFC800 : 0xe69819,
+          arc: dark ? 0x38bdf8 : 0x0765d6,
+        });
+
+        let currentColors = getColors(isDark);
+
+        // 1. Holographic Dot-Grid Globe Sphere
+        const sphereRadius = 3.5;
+        const dotCount = 1350;
+        const dotPositions = new Float32Array(dotCount * 3);
+
+        for (let i = 0; i < dotCount; i++) {
+          const phi = Math.acos(1 - 2 * (i + 0.5) / dotCount);
+          const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+
+          const x = sphereRadius * Math.sin(phi) * Math.cos(theta);
+          const y = sphereRadius * Math.sin(phi) * Math.sin(theta);
+          const z = sphereRadius * Math.cos(phi);
+
+          dotPositions[i * 3] = x;
+          dotPositions[i * 3 + 1] = y;
+          dotPositions[i * 3 + 2] = z;
+        }
+
+        const dotGeo = new THREE.BufferGeometry();
+        dotGeo.setAttribute('position', new THREE.BufferAttribute(dotPositions, 3));
+
+        // Custom Canvas Texture for glowing circular particles
+        const canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+        const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+        grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        grad.addColorStop(0.35, isDark ? 'rgba(0, 224, 237, 0.85)' : 'rgba(7, 101, 214, 0.85)');
+        grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 64, 64);
+        const dotTex = new THREE.CanvasTexture(canvas);
+
+        const dotMat = new THREE.PointsMaterial({
+          size: 0.22,
+          map: dotTex,
+          transparent: true,
+          opacity: 0.88,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          color: currentColors.dots,
+        });
+        const globePoints = new THREE.Points(dotGeo, dotMat);
+        globeGroup.add(globePoints);
+
+        // 2. Wireframe Atmosphere Grid
+        const wireGeo = new THREE.SphereGeometry(sphereRadius, 24, 24);
+        const wireMat = new THREE.MeshBasicMaterial({
+          color: currentColors.primary,
+          wireframe: true,
+          transparent: true,
+          opacity: 0.12,
+          blending: THREE.AdditiveBlending,
+        });
+        const wireSphere = new THREE.Mesh(wireGeo, wireMat);
+        globeGroup.add(wireSphere);
+
+        // 3. Inner Glowing Core Sphere
+        const coreGeo = new THREE.SphereGeometry(sphereRadius * 0.95, 32, 32);
+        const coreMat = new THREE.MeshBasicMaterial({
+          color: isDark ? 0x051b2e : 0xeff6ff,
+          transparent: true,
+          opacity: isDark ? 0.6 : 0.4,
+        });
+        const coreSphere = new THREE.Mesh(coreGeo, coreMat);
+        globeGroup.add(coreSphere);
+
+        // 4. Latitude & Longitude Neon Rings
+        const ringGroup = new THREE.Group();
+        globeGroup.add(ringGroup);
+
+        const createRing = (radius, rotX, rotY, color, opacity = 0.4) => {
+          const ringGeo = new THREE.RingGeometry(radius - 0.02, radius + 0.02, 64);
+          const ringMat = new THREE.MeshBasicMaterial({
+            color: color,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: opacity,
+            blending: THREE.AdditiveBlending,
+          });
+          const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+          ringMesh.rotation.x = rotX;
+          ringMesh.rotation.y = rotY;
+          return ringMesh;
+        };
+
+        const equator = createRing(sphereRadius + 0.04, Math.PI / 2, 0, currentColors.primary, 0.4);
+        const meridian1 = createRing(sphereRadius + 0.04, 0, 0, currentColors.secondary, 0.22);
+        const meridian2 = createRing(sphereRadius + 0.04, 0, Math.PI / 2, currentColors.secondary, 0.22);
+        ringGroup.add(equator, meridian1, meridian2);
+
+        // 5. Major Tourist Safe Hub Beacons
+        const hubs = [
+          { name: 'Tokyo', lat: 35.6762, lon: 139.6503 },
+          { name: 'Paris', lat: 48.8566, lon: 2.3522 },
+          { name: 'London', lat: 51.5074, lon: -0.1278 },
+          { name: 'New York', lat: 40.7128, lon: -74.0060 },
+          { name: 'Sydney', lat: -33.8688, lon: 151.2093 },
+          { name: 'Bali', lat: -8.3405, lon: 115.0920 },
+          { name: 'Delhi', lat: 28.6139, lon: 77.2090 },
+          { name: 'Rome', lat: 41.9028, lon: 12.4964 },
+          { name: 'Dubai', lat: 25.2048, lon: 55.2708 },
+          { name: 'Singapore', lat: 1.3521, lon: 103.8198 },
+        ];
+
+        const latLonToVector3 = (lat, lon, radius) => {
+          const phi = (90 - lat) * (Math.PI / 180);
+          const theta = (lon + 180) * (Math.PI / 180);
+          const x = -(radius * Math.sin(phi) * Math.cos(theta));
+          const z = radius * Math.sin(phi) * Math.sin(theta);
+          const y = radius * Math.cos(phi);
+          return new THREE.Vector3(x, y, z);
+        };
+
+        const beaconRings = [];
+
+        hubs.forEach((hub) => {
+          const pos = latLonToVector3(hub.lat, hub.lon, sphereRadius + 0.06);
+
+          // Beacon Pin
+          const pinGeo = new THREE.CylinderGeometry(0.02, 0.05, 0.32, 8);
+          const pinMat = new THREE.MeshBasicMaterial({
+            color: currentColors.beacon,
+            blending: THREE.AdditiveBlending,
+          });
+          const pin = new THREE.Mesh(pinGeo, pinMat);
+          pin.position.copy(pos);
+          pin.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), pos.clone().normalize());
+          globeGroup.add(pin);
+
+          // Pulsing Base Ring
+          const pRingGeo = new THREE.RingGeometry(0.08, 0.14, 16);
+          const pRingMat = new THREE.MeshBasicMaterial({
+            color: currentColors.primary,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.9,
+            blending: THREE.AdditiveBlending,
+          });
+          const pRing = new THREE.Mesh(pRingGeo, pRingMat);
+          pRing.position.copy(pos);
+          pRing.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), pos.clone().normalize());
+          globeGroup.add(pRing);
+          beaconRings.push({ mesh: pRing, phase: Math.random() * Math.PI });
+        });
+
+        // 6. 3D Flight / Safety Trajectory Arcs
+        const arcConnections = [
+          [0, 6], // Tokyo -> Delhi
+          [6, 8], // Delhi -> Dubai
+          [8, 1], // Dubai -> Paris
+          [1, 2], // Paris -> London
+          [2, 3], // London -> NY
+          [0, 4], // Tokyo -> Sydney
+          [4, 5], // Sydney -> Bali
+          [5, 9], // Bali -> Singapore
+        ];
+
+        const arcPulses = [];
+
+        arcConnections.forEach(([i1, i2]) => {
+          const p1 = latLonToVector3(hubs[i1].lat, hubs[i1].lon, sphereRadius + 0.06);
+          const p2 = latLonToVector3(hubs[i2].lat, hubs[i2].lon, sphereRadius + 0.06);
+
+          const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+          const distance = p1.distanceTo(p2);
+          const elevation = sphereRadius + 0.45 + distance * 0.24;
+          mid.normalize().multiplyScalar(elevation);
+
+          const curve = new THREE.QuadraticBezierCurve3(p1, mid, p2);
+          const points = curve.getPoints(36);
+          const curveGeo = new THREE.BufferGeometry().setFromPoints(points);
+
+          const curveMat = new THREE.LineBasicMaterial({
+            color: currentColors.arc,
+            transparent: true,
+            opacity: 0.38,
+            blending: THREE.AdditiveBlending,
+          });
+          const line = new THREE.Line(curveGeo, curveMat);
+          globeGroup.add(line);
+
+          // Traveling pulse packet
+          const packetGeo = new THREE.SphereGeometry(0.07, 8, 8);
+          const packetMat = new THREE.MeshBasicMaterial({
+            color: currentColors.primary,
+            blending: THREE.AdditiveBlending,
+          });
+          const packet = new THREE.Mesh(packetGeo, packetMat);
+          globeGroup.add(packet);
+          arcPulses.push({ mesh: packet, curve, t: Math.random(), speed: 0.007 + Math.random() * 0.003 });
+        });
+
+        // 7. Outer Holographic Shield Concentric Orbit Rings
+        const shieldGroup = new THREE.Group();
+        rootGroup.add(shieldGroup);
+
+        const orbRing1Geo = new THREE.TorusGeometry(sphereRadius + 1.15, 0.02, 8, 72);
+        const orbRing1Mat = new THREE.MeshBasicMaterial({
+          color: currentColors.primary,
+          transparent: true,
+          opacity: 0.5,
+          blending: THREE.AdditiveBlending,
+        });
+        const orbRing1 = new THREE.Mesh(orbRing1Geo, orbRing1Mat);
+        orbRing1.rotation.x = Math.PI / 3;
+        orbRing1.rotation.y = Math.PI / 6;
+        shieldGroup.add(orbRing1);
+
+        const orbRing2Geo = new THREE.TorusGeometry(sphereRadius + 1.5, 0.018, 8, 72);
+        const orbRing2Mat = new THREE.MeshBasicMaterial({
+          color: currentColors.accent,
+          transparent: true,
+          opacity: 0.4,
+          blending: THREE.AdditiveBlending,
+        });
+        const orbRing2 = new THREE.Mesh(orbRing2Geo, orbRing2Mat);
+        orbRing2.rotation.x = -Math.PI / 4;
+        orbRing2.rotation.z = Math.PI / 5;
+        shieldGroup.add(orbRing2);
+
+        // Orbiting Cyber Satellites
+        const satCount = 4;
+        const satellites = [];
+        for (let i = 0; i < satCount; i++) {
+          const satGeo = new THREE.OctahedronGeometry(0.16, 0);
+          const satMat = new THREE.MeshBasicMaterial({
+            color: i % 2 === 0 ? currentColors.primary : currentColors.beacon,
+            wireframe: true,
+            blending: THREE.AdditiveBlending,
+          });
+          const sat = new THREE.Mesh(satGeo, satMat);
+          shieldGroup.add(sat);
+          satellites.push({
+            mesh: sat,
+            radius: sphereRadius + 1.15 + (i % 2) * 0.35,
+            angle: (i * Math.PI * 2) / satCount,
+            speed: 0.016 * (i % 2 === 0 ? 1 : -1),
+            inclination: i % 2 === 0 ? Math.PI / 3 : -Math.PI / 4,
+          });
+        }
+
+        // 8. Ambient 3D Starfield Particles
+        const starCount = 240;
+        const starPositions = new Float32Array(starCount * 3);
+        for (let i = 0; i < starCount; i++) {
+          starPositions[i * 3] = (Math.random() - 0.5) * 32;
+          starPositions[i * 3 + 1] = (Math.random() - 0.5) * 32;
+          starPositions[i * 3 + 2] = (Math.random() - 0.5) * 20;
+        }
+        const starGeo = new THREE.BufferGeometry();
+        starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+        const starMat = new THREE.PointsMaterial({
+          size: 0.16,
+          map: dotTex,
+          transparent: true,
+          opacity: 0.55,
+          blending: THREE.AdditiveBlending,
+          color: currentColors.dots,
+          depthWrite: false,
+        });
+        const starPoints = new THREE.Points(starGeo, starMat);
+        scene.add(starPoints);
+
+        // Mouse Tracking & Interactive Dragging
+        let mouseX = 0;
+        let mouseY = 0;
+        let targetRotX = 0.2;
+        let targetRotY = 0;
+        let isDragging = false;
+        let prevMousePos = { x: 0, y: 0 };
+        let dragVelocity = { x: 0, y: 0 };
+
+        const handlePointerMove = (e) => {
+          const rect = container.getBoundingClientRect();
+          const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+          const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+          mouseX = ((clientX - rect.left) / rect.width - 0.5) * 2;
+          mouseY = ((clientY - rect.top) / rect.height - 0.5) * 2;
+
+          if (isDragging) {
+            const deltaX = clientX - prevMousePos.x;
+            const deltaY = clientY - prevMousePos.y;
+            dragVelocity.x = deltaX * 0.008;
+            dragVelocity.y = deltaY * 0.008;
+            globeGroup.rotation.y += dragVelocity.x;
+            globeGroup.rotation.x += dragVelocity.y;
+            prevMousePos = { x: clientX, y: clientY };
+          }
+        };
+
+        const handlePointerDown = (e) => {
+          isDragging = true;
+          const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+          const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+          prevMousePos = { x: clientX, y: clientY };
+        };
+
+        const handlePointerUp = () => {
+          isDragging = false;
+        };
+
+        container.addEventListener('mousemove', handlePointerMove, { passive: true });
+        container.addEventListener('mousedown', handlePointerDown);
+        window.addEventListener('mouseup', handlePointerUp);
+        container.addEventListener('touchmove', handlePointerMove, { passive: true });
+        container.addEventListener('touchstart', handlePointerDown, { passive: true });
+        window.addEventListener('touchend', handlePointerUp);
+
+        // Resize Handler (Responsive across phone, tablet, laptop)
+        const handleResize = () => {
+          if (!container) return;
+          const w = container.clientWidth;
+          const h = container.clientHeight;
+          if (!w || !h) return;
+          camera.aspect = w / h;
+          camera.position.z = w < 480 ? 13.8 : w < 768 ? 12.4 : 11.2;
+          camera.updateProjectionMatrix();
+          renderer.setSize(w, h);
+        };
+        window.addEventListener('resize', handleResize, { passive: true });
+
+        // Animation Loop with Visibility Culling (Zero CPU/GPU when offscreen)
+        let animId;
+        let isGlobeVisible = true;
+        let clock = new THREE.Clock();
+
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            isGlobeVisible = entry.isIntersecting;
+            if (isGlobeVisible && !animId) {
+              clock.start();
+              animId = requestAnimationFrame(animate);
+            }
+          });
+        }, { threshold: 0.05 });
+
+        observer.observe(container);
+
+        const animate = () => {
+          if (!isGlobeVisible) {
+            animId = null;
+            return;
+          }
+
+          animId = requestAnimationFrame(animate);
+          const elapsedTime = clock.getElapsedTime();
+
+          if (!isDragging) {
+            dragVelocity.x *= 0.94;
+            dragVelocity.y *= 0.94;
+            globeGroup.rotation.y += 0.0035 + dragVelocity.x;
+            globeGroup.rotation.x += dragVelocity.y;
+
+            targetRotY = mouseX * 0.4;
+            targetRotX = 0.2 - mouseY * 0.3;
+            rootGroup.rotation.y += (targetRotY - rootGroup.rotation.y) * 0.04;
+            rootGroup.rotation.x += (targetRotX - rootGroup.rotation.x) * 0.04;
+          }
+
+          orbRing1.rotation.z += 0.005;
+          orbRing2.rotation.z -= 0.007;
+
+          satellites.forEach((sat) => {
+            sat.angle += sat.speed;
+            sat.mesh.position.x = sat.radius * Math.cos(sat.angle);
+            sat.mesh.position.z = sat.radius * Math.sin(sat.angle) * Math.cos(sat.inclination);
+            sat.mesh.position.y = sat.radius * Math.sin(sat.angle) * Math.sin(sat.inclination);
+            sat.mesh.rotation.x += 0.025;
+            sat.mesh.rotation.y += 0.035;
+          });
+
+          arcPulses.forEach((p) => {
+            p.t = (p.t + p.speed) % 1;
+            const pt = p.curve.getPoint(p.t);
+            p.mesh.position.copy(pt);
+          });
+
+          beaconRings.forEach((b) => {
+            const scale = 1 + Math.sin(elapsedTime * 3.5 + b.phase) * 0.35;
+            b.mesh.scale.set(scale, scale, scale);
+            b.mesh.material.opacity = Math.max(0.2, 0.85 - (scale - 1) * 1.5);
+          });
+
+          starPoints.rotation.y = elapsedTime * 0.012;
+
+          renderer.render(scene, camera);
+        };
+
+        animId = requestAnimationFrame(animate);
+
+        return () => {
+          observer.disconnect();
+          if (animId) cancelAnimationFrame(animId);
+          window.removeEventListener('resize', handleResize);
+          container.removeEventListener('mousemove', handlePointerMove);
+          container.removeEventListener('mousedown', handlePointerDown);
+          window.removeEventListener('mouseup', handlePointerUp);
+          container.removeEventListener('touchmove', handlePointerMove);
+          container.removeEventListener('touchstart', handlePointerDown);
+          window.removeEventListener('touchend', handlePointerUp);
+          if (renderer.domElement && renderer.domElement.parentNode) {
+            renderer.domElement.parentNode.removeChild(renderer.domElement);
+          }
+          renderer.dispose();
+        };
+      }, [isDark]);
+
+      return (
+        <div
+          ref={mountRef}
+          className="relative w-full h-[360px] sm:h-[430px] cursor-grab active:cursor-grabbing mx-auto flex items-center justify-center select-none"
+          title="Drag to interactively rotate the 3D globe"
+        />
+      );
+    }
+
     // Main App Component
     function App() {
       const [view, setView] = useState('landing'); // 'landing' | 'dashboard'
@@ -2139,6 +2848,24 @@
         setSos(loadJSON(SOS_KEY, []));
         setAlerts(loadJSON(ALERTS_KEY, []));
         ensureAdmin();
+
+        // 3D Cursor Spotlight Tracker with RAF Smoothing
+        const spotlight = document.getElementById('cursor-spotlight');
+        let spotlightRaf = null;
+        const onMouseMove = (e) => {
+          if (spotlightRaf) return;
+          spotlightRaf = requestAnimationFrame(() => {
+            if (spotlight) {
+              spotlight.style.transform = `translate3d(${e.clientX - 240}px, ${e.clientY - 240}px, 0)`;
+            }
+            spotlightRaf = null;
+          });
+        };
+        window.addEventListener('mousemove', onMouseMove, { passive: true });
+        return () => {
+          window.removeEventListener('mousemove', onMouseMove);
+          if (spotlightRaf) cancelAnimationFrame(spotlightRaf);
+        };
       }, []);
 
       const toggleTheme = () => {
@@ -2270,14 +2997,17 @@
         <div className="min-h-screen">
           {/* Header */}
           <header className="fixed inset-x-0 top-0 z-50 bg-white/90 shadow-sm backdrop-blur-md dark:bg-[#071424]/90 dark:border-b dark:border-slate-800">
-            <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-              <button onClick={() => setView('landing')} className="flex items-center gap-2 font-display text-2xl font-bold text-brand-600 dark:text-brand-400">
-                🛡️ TravelShield
+            <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
+              <button onClick={() => setView('landing')} className="flex items-center gap-2.5 font-display text-xl sm:text-2xl font-black tracking-tight text-brand-600 dark:text-brand-400 group">
+                <TravelShieldLogo size={34} className="group-hover:scale-110" />
+                <span className="bg-gradient-to-r from-brand-600 via-sky-500 to-brand-700 bg-clip-text text-transparent dark:from-sky-300 dark:via-cyan-400 dark:to-blue-400">
+                  TravelShield
+                </span>
               </button>
-              <div className="hidden items-center gap-4 md:flex">
-                <a href="#features" onClick={() => setView('landing')} className="neu-btn">Features</a>
-                <a href="#how-it-works" onClick={() => setView('landing')} className="neu-btn">How It Works</a>
-                <a href="#testimonials" onClick={() => setView('landing')} className="neu-btn">Testimonials</a>
+              <div className="hidden items-center gap-3 lg:gap-4 md:flex">
+                <a href="#features" onClick={() => setView('landing')} className="neu-btn text-xs sm:text-sm">Features</a>
+                <a href="#how-it-works" onClick={() => setView('landing')} className="neu-btn text-xs sm:text-sm">How It Works</a>
+                <a href="#testimonials" onClick={() => setView('landing')} className="neu-btn text-xs sm:text-sm">Testimonials</a>
                 <label className="bb8-toggle">
                   <input
                     className="bb8-toggle__checkbox"
@@ -2319,7 +3049,7 @@
                 </label>
                 <button
                   onClick={() => { setView('dashboard'); setTab('user'); }}
-                  className="neu-btn"
+                  className="neu-btn text-xs sm:text-sm"
                 >
                   Dashboard
                 </button>
@@ -2333,7 +3063,7 @@
                 </button>
               </div>
               <div className="flex items-center gap-3 md:hidden">
-                <label className="bb8-toggle">
+                <label className="bb8-toggle scale-90">
                   <input
                     className="bb8-toggle__checkbox"
                     type="checkbox"
@@ -2374,7 +3104,7 @@
                 </label>
                 <button
                   onClick={() => setMenuOpen(!menuOpen)}
-                  className="text-ink dark:text-slate-100"
+                  className="p-2 text-ink dark:text-slate-100 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                   aria-label="Toggle menu"
                 >
                   {menuOpen ? '✕' : '☰'}
@@ -2401,9 +3131,9 @@
 
           {/* Body Views */}
           {view === 'landing' ? (
-            <main className="pt-24">
+            <main className="pt-20 sm:pt-24">
               {/* Hero */}
-              <section className="dot-grid py-20 text-center relative overflow-hidden">
+              <section className="dot-grid py-14 sm:py-20 text-center relative overflow-hidden">
                 {/* SVG Path Marquee Background Animation */}
                 <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden opacity-40 dark:opacity-30">
                   <svg viewBox="0 0 1000 320" className="w-full h-full" preserveAspectRatio="none">
@@ -2438,21 +3168,21 @@
                     </div>
                   ))}
                 </div>
-                <div className="relative z-10 mx-auto max-w-4xl px-6">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-brand-100 bg-brand-50 px-4 py-1.5 text-sm font-semibold text-brand-700 dark:border-brand-900 dark:bg-brand-950 dark:text-brand-300">
-                    🛡️ Smart Tourist Safety Monitoring
+                <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50/90 px-3.5 py-1.5 text-xs sm:text-sm font-bold text-brand-700 shadow-sm backdrop-blur-md dark:border-brand-800 dark:bg-brand-950/80 dark:text-brand-300">
+                    <TravelShieldLogo size={20} /> Smart Tourist Safety Monitoring
                   </span>
-                  <h1 className="mt-6 font-outfit text-4xl font-light leading-tight tracking-tight text-ink sm:text-6xl dark:text-white">
+                  <h1 className="mt-5 font-outfit text-3xl font-light leading-tight tracking-tight text-ink sm:text-5xl md:text-6xl dark:text-white">
                     Travel <span className="font-black text-brand-600 dark:text-brand-400">Smarter</span>, Stay <span className="font-black text-slate-900 dark:text-white">Safer</span>
                   </h1>
-                  <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-600 dark:text-slate-300">
+                  <p className="mx-auto mt-4 sm:mt-6 max-w-2xl text-sm sm:text-base md:text-lg text-slate-600 dark:text-slate-300">
                     Your personal safety companion for exploring the world with confidence. Get real-time alerts,
                     emergency assistance, and local safety tips, all in one app.
                   </p>
-                  <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+                  <div className="mt-8 sm:mt-10 flex flex-col items-center justify-center gap-3 sm:gap-4 sm:flex-row">
                     <button
                       onClick={() => { setView('dashboard'); setTab('user'); }}
-                      className="pearl-btn"
+                      className="pearl-btn w-full sm:w-auto"
                     >
                       <div className="wrap">
                         <p>Get Started Free →</p>
@@ -2460,40 +3190,63 @@
                     </button>
                     <a
                       href="#features"
-                      className="neu-btn"
+                      className="neu-btn w-full sm:w-auto text-center"
                     >
                       Learn More
                     </a>
                   </div>
 
-                  <dl className="mx-auto mt-16 grid max-w-2xl grid-cols-3 gap-6 border-t border-slate-200/80 pt-8 dark:border-slate-800">
+                  {/* 3D Holographic Globe Centerpiece Stage with Parallax & Telemetry Badges */}
+                  <div className="mt-6 sm:mt-8 relative max-w-2xl mx-auto">
+                    <Interactive3DGlobe isDark={dark} />
+
+                    {/* Floating 3D Telemetry Badges */}
+                    <div className="absolute top-2 left-2 sm:top-6 sm:left-4 z-20 rounded-2xl border border-brand-300/80 bg-white/90 p-2.5 sm:p-3.5 shadow-2xl backdrop-blur-md dark:border-brand-500/50 dark:bg-slate-900/90 pointer-events-none animate-float-hero">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                        <p className="text-[11px] sm:text-xs font-extrabold text-ink dark:text-white">Active Geofencing</p>
+                      </div>
+                      <p className="mt-0.5 text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium">10,000+ Safe Zones</p>
+                    </div>
+
+                    <div className="absolute bottom-2 right-2 sm:bottom-6 sm:right-4 z-20 rounded-2xl border border-brand-300/80 bg-white/90 p-2.5 sm:p-3.5 shadow-2xl backdrop-blur-md dark:border-brand-500/50 dark:bg-slate-900/90 pointer-events-none animate-float-hero" style={{ animationDelay: '-3.5s' }}>
+                      <div className="flex items-center gap-2">
+                        <Emoji3DBadge emoji="⚡" glowColor="amber" size="sm" />
+                        <p className="text-[11px] sm:text-xs font-extrabold text-ink dark:text-white">Instant SOS Relay</p>
+                      </div>
+                      <p className="mt-0.5 text-[10px] sm:text-[11px] text-brand-600 dark:text-brand-300 font-semibold">&lt; 1s Dispatch</p>
+                    </div>
+                  </div>
+
+                  <dl className="mx-auto mt-8 sm:mt-10 grid max-w-2xl grid-cols-3 gap-3 sm:gap-6 border-t border-slate-200/80 pt-6 sm:pt-8 dark:border-slate-800">
                     {[
                       ['120+', 'Countries covered'],
                       ['24/7', 'Emergency response'],
                       ['4.9★', 'Traveler rating'],
                     ].map(([v, k]) => (
-                      <div key={k}>
-                        <dt className="font-display text-2xl font-extrabold text-ink sm:text-3xl dark:text-white">{v}</dt>
-                        <dd className="mt-1 text-xs text-slate-500 sm:text-sm dark:text-slate-400">{k}</dd>
-                      </div>
+                      <TiltCard key={k} className="rounded-xl border border-slate-100 bg-white/60 p-3 sm:p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/40">
+                        <dt className="font-display text-xl sm:text-2xl md:text-3xl font-extrabold text-ink dark:text-white depth-1">{v}</dt>
+                        <dd className="mt-1 text-[11px] sm:text-xs text-slate-500 sm:text-sm dark:text-slate-400 depth-1">{k}</dd>
+                      </TiltCard>
                     ))}
                   </dl>
                 </div>
               </section>
 
               {/* Features */}
-              <section id="features" className="bg-white py-24 dark:bg-[#0b1f2e]">
-                <div className="mx-auto max-w-6xl px-6">
+              <section id="features" className="bg-white py-16 sm:py-24 dark:bg-[#0b1f2e]">
+                <div className="mx-auto max-w-6xl px-4 sm:px-6">
                   <div className="text-center">
-                    <h2 className="font-semibold uppercase tracking-widest text-brand-600 dark:text-brand-400">Core Features</h2>
-                    <h3 className="mt-3 font-outfit text-3xl font-light text-ink sm:text-4xl dark:text-white">
+                    <h2 className="font-semibold text-xs sm:text-sm uppercase tracking-widest text-brand-600 dark:text-brand-400">Core Features</h2>
+                    <h3 className="mt-2 sm:mt-3 font-outfit text-2xl sm:text-3xl md:text-4xl font-light text-ink dark:text-white">
                       Everything You Need for a <span className="font-black text-brand-600 dark:text-brand-400">Secure Trip</span>
                     </h3>
                   </div>
-                  <div className="mt-14 grid gap-8 md:grid-cols-3">
+                  <div className="mt-10 sm:mt-14 grid gap-6 sm:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                     {[
                       {
                         icon: '🔔',
+                        glow: 'amber',
                         title: 'Real-time Safety Alerts',
                         body: 'Receive instant notifications about local events, weather warnings, or safety concerns in your area.',
                         slides: [
@@ -2504,6 +3257,7 @@
                       },
                       {
                         icon: '🛟',
+                        glow: 'rose',
                         title: 'One-Tap Emergency SOS',
                         body: 'Instantly alert your emergency contacts and local authorities with your location with a single tap.',
                         slides: [
@@ -2514,6 +3268,7 @@
                       },
                       {
                         icon: '🗺️',
+                        glow: 'cyan',
                         title: 'Safe Zone Maps',
                         body: 'Navigate new cities confidently with maps highlighting safe neighborhoods, verified hotels, and trusted services.',
                         slides: [
@@ -2523,37 +3278,39 @@
                         ]
                       }
                     ].map((f) => (
-                      <div key={f.title} className="flex flex-col justify-between rounded-2xl border border-slate-100 bg-slate-50/70 p-6 transition-all hover:-translate-y-1.5 hover:bg-white hover:shadow-xl dark:border-slate-800 dark:bg-slate-900/50 dark:hover:bg-slate-800">
+                      <TiltCard key={f.title} className="flex flex-col justify-between rounded-2xl border border-slate-100 bg-slate-50/70 p-5 sm:p-6 transition-all hover:bg-white hover:shadow-xl dark:border-slate-800 dark:bg-slate-900/50 dark:hover:bg-slate-800">
                         <div>
-                          <div className="text-3xl">{f.icon}</div>
-                          <h4 className="mt-4 font-outfit text-xl font-bold text-ink dark:text-white">{f.title}</h4>
-                          <p className="mt-2 leading-relaxed text-slate-600 dark:text-slate-300 text-sm">{f.body}</p>
+                          <div className="depth-2 inline-block">
+                            <Emoji3DBadge emoji={f.icon} glowColor={f.glow} size="md" />
+                          </div>
+                          <h4 className="mt-4 font-outfit text-lg sm:text-xl font-bold text-ink dark:text-white depth-1">{f.title}</h4>
+                          <p className="mt-2 leading-relaxed text-slate-600 dark:text-slate-300 text-sm depth-1">{f.body}</p>
                         </div>
                         {/* 3D Coverflow Carousel Preview inside Feature Card */}
-                        <div className="mt-4 border-t border-slate-200/60 pt-4 dark:border-slate-700/60">
+                        <div className="mt-4 border-t border-slate-200/60 pt-4 dark:border-slate-700/60 depth-1">
                           <CoverflowCarousel slides={f.slides} />
                         </div>
-                      </div>
+                      </TiltCard>
                     ))}
                   </div>
                 </div>
               </section>
 
               {/* SVG Path Motion Showcase Section (Middle of Page) */}
-              <section className="relative overflow-hidden bg-slate-50/70 py-20 dark:bg-[#071424] border-y border-slate-200/60 dark:border-slate-800/80">
-                <div className="mx-auto max-w-6xl px-6 text-center">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-brand-700 dark:border-brand-800 dark:bg-brand-950 dark:text-brand-300">
+              <section className="relative overflow-hidden bg-slate-50/70 py-16 sm:py-20 dark:bg-[#071424] border-y border-slate-200/60 dark:border-slate-800/80">
+                <div className="mx-auto max-w-6xl px-4 sm:px-6 text-center">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3.5 py-1.5 text-xs font-bold uppercase tracking-widest text-brand-700 dark:border-brand-800 dark:bg-brand-950 dark:text-brand-300">
                     🔄 Interactive Destination Motion
                   </span>
-                  <h2 className="mt-4 font-outfit text-3xl font-light text-ink sm:text-4xl dark:text-white">
+                  <h2 className="mt-3 sm:mt-4 font-outfit text-2xl sm:text-3xl md:text-4xl font-light text-ink dark:text-white">
                     Explore <span className="font-black text-brand-600 dark:text-sky-400">Global Safe</span> Destinations
                   </h2>
-                  <p className="mx-auto mt-3 max-w-xl text-sm text-slate-600 dark:text-slate-300">
+                  <p className="mx-auto mt-2 sm:mt-3 max-w-xl text-xs sm:text-sm text-slate-600 dark:text-slate-300">
                     Hover over any card to pause the continuous loop path motion.
                   </p>
                 </div>
 
-                <div className="relative mx-auto mt-10 h-[380px] w-full max-w-6xl overflow-hidden">
+                <div className="relative mx-auto mt-8 sm:mt-10 h-[300px] sm:h-[380px] w-full max-w-6xl overflow-hidden">
                   <svg viewBox="0 0 996 330" className="h-full w-full" preserveAspectRatio="xMidYMid meet">
                     <path
                       d="M1 209.434C58.5872 255.935 387.926 325.938 482.583 209.434C600.905 63.8051 525.516 -43.2211 427.332 19.9613C329.149 83.1436 352.902 242.723 515.041 267.302C644.752 286.966 943.56 181.94 995 156.5"
@@ -2579,16 +3336,16 @@
                   ].map((card, idx) => (
                     <div
                       key={idx}
-                      className="animate-marquee-loop absolute top-0 left-0 flex items-center gap-2 rounded-xl border border-slate-200/90 bg-white/95 p-2 shadow-xl backdrop-blur-md transition-all hover:scale-125 hover:z-50 dark:border-sky-400/80 dark:bg-[#0c2438]/95 dark:shadow-[0_0_20px_rgba(56,189,248,0.35)]"
+                      className="animate-marquee-loop absolute top-0 left-0 flex items-center gap-2 rounded-xl border border-slate-200/90 bg-white/95 p-1.5 sm:p-2 shadow-xl backdrop-blur-md transition-all hover:scale-125 hover:z-50 dark:border-sky-400/80 dark:bg-[#0c2438]/95 dark:shadow-[0_0_20px_rgba(56,189,248,0.35)]"
                       style={{
                         offsetPath: "path('M1 209.434C58.5872 255.935 387.926 325.938 482.583 209.434C600.905 63.8051 525.516 -43.2211 427.332 19.9613C329.149 83.1436 352.902 242.723 515.041 267.302C644.752 286.966 943.56 181.94 995 156.5')",
                         animationDelay: `${idx * -2.5}s`,
                       }}
                     >
-                      <img src={card.img} alt={card.title} className="h-10 w-10 rounded-lg object-cover shadow-sm shrink-0" />
+                      <img src={card.img} alt={card.title} className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg object-cover shadow-sm shrink-0" />
                       <div className="text-left leading-tight pr-1">
-                        <p className="text-xs font-extrabold text-slate-800 dark:text-white whitespace-nowrap">{card.title}</p>
-                        <span className="inline-block text-[10px] font-bold text-brand-600 dark:text-sky-300 whitespace-nowrap">{card.tag}</span>
+                        <p className="text-[11px] sm:text-xs font-extrabold text-slate-800 dark:text-white whitespace-nowrap">{card.title}</p>
+                        <span className="inline-block text-[9px] sm:text-[10px] font-bold text-brand-600 dark:text-sky-300 whitespace-nowrap">{card.tag}</span>
                       </div>
                     </div>
                   ))}
@@ -2596,89 +3353,96 @@
               </section>
 
               {/* How it works */}
-              <section id="how-it-works" className="bg-slate-50 py-24 dark:bg-[#071424]">
-                <div className="mx-auto grid max-w-6xl items-center gap-16 px-6 lg:grid-cols-2">
+              <section id="how-it-works" className="bg-slate-50 py-16 sm:py-24 dark:bg-[#071424]">
+                <div className="mx-auto grid max-w-6xl items-center gap-10 lg:gap-16 px-4 sm:px-6 lg:grid-cols-2">
                   <div>
-                    <h2 className="font-semibold uppercase tracking-widest text-brand-600 dark:text-brand-400">How It Works</h2>
-                    <h3 className="mt-3 font-display text-3xl font-extrabold text-ink sm:text-4xl dark:text-white">
+                    <h2 className="font-semibold text-xs sm:text-sm uppercase tracking-widest text-brand-600 dark:text-brand-400">How It Works</h2>
+                    <h3 className="mt-2 sm:mt-3 font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-ink dark:text-white">
                       Your Safety in 3 Simple Steps
                     </h3>
-                    <ul className="mt-10 space-y-8">
+                    <ul className="mt-8 sm:mt-10 space-y-4 sm:space-y-6">
                       {[
                         { strong: 'Set Up Your Profile.', body: 'Add your trip details and emergency contacts so we can provide personalized alerts.' },
                         { strong: 'Explore with Peace of Mind.', body: 'Keep the app running in the background to receive alerts and access safety features.' },
                         { strong: 'Get Help When Needed.', body: 'Use the SOS button to instantly connect with help if you are in an unsafe situation.' }
                       ].map((s, i) => (
-                        <li key={s.strong} className="flex gap-5">
-                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-600 font-display text-lg font-bold text-white shadow-lg">
-                            {i + 1}
-                          </div>
-                          <p className="pt-1.5 text-slate-600 dark:text-slate-300">
-                            <strong className="text-ink dark:text-white">{s.strong}</strong> {s.body}
-                          </p>
+                        <li key={s.strong}>
+                          <TiltCard className="flex gap-4 sm:gap-5 p-3.5 sm:p-4 rounded-xl border border-slate-200/70 bg-white/80 dark:border-slate-800 dark:bg-slate-900/60 shadow-sm">
+                            <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-full bg-brand-600 font-display text-base sm:text-lg font-bold text-white shadow-lg depth-2">
+                              {i + 1}
+                            </div>
+                            <p className="pt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-300 depth-1 leading-relaxed">
+                              <strong className="text-ink dark:text-white">{s.strong}</strong> {s.body}
+                            </p>
+                          </TiltCard>
                         </li>
                       ))}
                     </ul>
                   </div>
                   <div>
-                    <SosDemo />
+                    <TiltCard className="rounded-2xl">
+                      <SosDemo />
+                    </TiltCard>
                   </div>
                 </div>
               </section>
 
               {/* Testimonials */}
-              <section id="testimonials" className="bg-white py-24 dark:bg-[#0b1f2e]">
-                <div className="mx-auto max-w-6xl px-6">
+              <section id="testimonials" className="bg-white py-16 sm:py-24 dark:bg-[#0b1f2e]">
+                <div className="mx-auto max-w-6xl px-4 sm:px-6">
                   <div className="text-center">
-                    <h2 className="font-semibold uppercase tracking-widest text-brand-600 dark:text-brand-400">Testimonials</h2>
-                    <h3 className="mt-3 font-display text-3xl font-extrabold text-ink sm:text-4xl dark:text-white">
+                    <h2 className="font-semibold text-xs sm:text-sm uppercase tracking-widest text-brand-600 dark:text-brand-400">Testimonials</h2>
+                    <h3 className="mt-2 sm:mt-3 font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-ink dark:text-white">
                       Trusted by Travelers Worldwide
                     </h3>
                   </div>
-                  <div className="mt-14 grid gap-8 md:grid-cols-3">
+                  <div className="mt-10 sm:mt-14 grid gap-6 sm:gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                     {[
                       { quote: 'This app was a lifesaver during my solo trip through Southeast Asia. The local alerts gave me so much peace of mind!', name: 'Anjali Sharma', role: 'Solo Traveler', initials: 'AS' },
                       { quote: 'The emergency contact feature is brilliant. My family felt much more at ease knowing they could be alerted if something went wrong.', name: 'Rohan Mehta', role: 'Family Vacationer', initials: 'RM' },
                       { quote: 'Navigating a new city was so much easier with the safe zone maps. I discovered amazing local spots I would have otherwise missed.', name: 'Priya Verma', role: 'Backpacker', initials: 'PV' }
                     ].map((t) => (
-                      <figure key={t.name} className="flex flex-col justify-between rounded-2xl border border-slate-100 bg-slate-50/70 p-8 dark:border-slate-800 dark:bg-slate-900/50">
-                        <blockquote className="leading-relaxed text-slate-700 dark:text-slate-300">“{t.quote}”</blockquote>
-                        <figcaption className="mt-6 flex items-center gap-4">
-                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-600 font-bold text-white">
+                      <TiltCard key={t.name} className="flex flex-col justify-between rounded-2xl border border-slate-100 bg-slate-50/70 p-6 sm:p-8 dark:border-slate-800 dark:bg-slate-900/50">
+                        <blockquote className="leading-relaxed text-sm sm:text-base text-slate-700 dark:text-slate-300 depth-1">“{t.quote}”</blockquote>
+                        <figcaption className="mt-6 flex items-center gap-3.5 depth-2">
+                          <div className="flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-brand-600 font-bold text-white shadow-md">
                             {t.initials}
                           </div>
                           <div>
-                            <p className="font-bold text-ink dark:text-white">{t.name}</p>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">{t.role}</p>
+                            <p className="font-bold text-sm sm:text-base text-ink dark:text-white">{t.name}</p>
+                            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">{t.role}</p>
                           </div>
                         </figcaption>
-                      </figure>
+                      </TiltCard>
                     ))}
                   </div>
                 </div>
               </section>
 
               {/* Footer */}
-              <footer className="bg-ink py-14 text-slate-300 dark:bg-[#030b14]">
-                <div className="mx-auto max-w-6xl px-6 text-center sm:text-left">
-                  <div className="grid gap-10 sm:grid-cols-3">
-                    <div>
-                      <h4 className="font-display text-xl font-bold text-white">🛡️ TravelShield</h4>
-                      <p className="mt-3 text-sm text-slate-400">Your safety, our priority.</p>
+              <footer className="bg-ink py-12 sm:py-14 text-slate-300 dark:bg-[#030b14]">
+                <div className="mx-auto max-w-6xl px-4 sm:px-6 text-center sm:text-left">
+                  <div className="grid gap-8 sm:gap-10 grid-cols-1 sm:grid-cols-3">
+                    <div className="flex flex-col items-center sm:items-start">
+                      <div className="flex items-center gap-2.5">
+                        <TravelShieldLogo size={32} />
+                        <h4 className="font-display text-xl font-bold text-white">TravelShield</h4>
+                      </div>
+                      <p className="mt-3 text-xs sm:text-sm text-slate-400">Your safety, our priority.</p>
                     </div>
                     <div>
-                      <h4 className="font-semibold text-white">Quick Links</h4>
-                      <ul className="mt-3 space-y-2 text-sm">
-                        <li><button onClick={() => setView('landing')} className="hover:text-white">Home</button></li>
-                        <li><button onClick={() => { setView('dashboard'); setTab('user'); }} className="hover:text-white">Dashboard</button></li>
+                      <h4 className="font-semibold text-white text-sm sm:text-base">Quick Links</h4>
+                      <ul className="mt-3 space-y-2 text-xs sm:text-sm">
+                        <li><button onClick={() => setView('landing')} className="hover:text-white transition">Home</button></li>
+                        <li><button onClick={() => { setView('dashboard'); setTab('user'); }} className="hover:text-white transition">Dashboard</button></li>
                       </ul>
                     </div>
                     <div>
-                      <h4 className="font-semibold text-white">Legal</h4>
-                      <p className="mt-3 text-sm text-slate-400">Privacy Policy &bull; Terms of Service</p>
+                      <h4 className="font-semibold text-white text-sm sm:text-base">Legal</h4>
+                      <p className="mt-3 text-xs sm:text-sm text-slate-400">Privacy Policy &bull; Terms of Service</p>
                     </div>
                   </div>
-                  <div className="mt-10 border-t border-white/10 pt-6 text-center text-sm text-slate-400">
+                  <div className="mt-8 sm:mt-10 border-t border-white/10 pt-6 text-center text-xs sm:text-sm text-slate-400">
                     © {new Date().getFullYear()} TravelShield. All Rights Reserved.
                   </div>
                 </div>
@@ -2686,15 +3450,18 @@
             </main>
           ) : (
             /* Dashboard View */
-            <div className="mx-auto max-w-5xl px-5 pt-28 pb-12">
+            <div className="mx-auto max-w-5xl px-3 sm:px-5 pt-24 sm:pt-28 pb-12">
               <header className="relative border-b border-slate-200 pb-4 text-center dark:border-slate-800">
-                <h1 className="font-dashboard text-3xl font-extrabold tracking-tight text-brand-600 dark:text-brand-400">TravelShield Dashboard</h1>
-                <p className="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">Smart Tourist Safety Monitoring System</p>
+                <div className="flex items-center justify-center gap-2.5 sm:gap-3">
+                  <TravelShieldLogo size={36} />
+                  <h1 className="font-dashboard text-2xl sm:text-3xl font-extrabold tracking-tight text-brand-600 dark:text-brand-400">TravelShield Dashboard</h1>
+                </div>
+                <p className="mt-1 text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400">Smart Tourist Safety Monitoring System</p>
 
-                <nav className="mt-5 flex flex-wrap items-center justify-center gap-3">
+                <nav className="mt-5 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
                   <button
                     onClick={() => setView('landing')}
-                    className="neu-btn font-dashboard"
+                    className="neu-btn font-dashboard text-xs sm:text-sm"
                   >
                     ← Back to Home
                   </button>
@@ -2704,7 +3471,7 @@
                       <button
                         key={t}
                         onClick={() => setTab(t)}
-                        className="wave-btn font-dashboard"
+                        className="wave-btn font-dashboard text-xs sm:text-sm"
                       >
                         <p>{t === 'user' ? 'User Dashboard' : 'Admin Dashboard'}</p>
                       </button>
@@ -2713,7 +3480,7 @@
                       <button
                         key={t}
                         onClick={() => setTab(t)}
-                        className="neu-btn font-dashboard"
+                        className="neu-btn font-dashboard text-xs sm:text-sm"
                       >
                         {t === 'user' ? 'User Dashboard' : 'Admin Dashboard'}
                       </button>
@@ -2724,66 +3491,72 @@
 
               {tab === 'user' ? (
                 <main className="mt-6 space-y-6">
-                  {/* Alerts */}
-                  <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
-                    <h2 className="font-dashboard text-xl font-bold tracking-tight">📢 Local Safety Alerts</h2>
-                    <div className="mt-3 space-y-2">
+                  {/* Alerts (🚨 📢) */}
+                  <TiltCard className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
+                    <div className="flex items-center gap-2.5 depth-1">
+                      <Emoji3DBadge emoji="🚨" glowColor="rose" size="sm" />
+                      <h2 className="font-dashboard text-lg sm:text-xl font-bold tracking-tight">Local Safety Alerts</h2>
+                    </div>
+                    <div className="mt-3.5 space-y-2 depth-1">
                       {alerts.length === 0 ? (
-                        <p className="rounded-lg border border-dashed border-slate-200 p-4 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                        <p className="rounded-lg border border-dashed border-slate-200 p-4 text-xs sm:text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
                           No active alerts right now. You are all clear.
                         </p>
                       ) : (
                         alerts.map((a) => {
                           const meta = SEVERITY_META[a.severity] || SEVERITY_META.info;
                           return (
-                            <div key={a.id} className={`rounded-lg border border-slate-100 border-l-4 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-900/40 ${meta.bar}`}>
+                            <div key={a.id} className={`rounded-lg border border-slate-100 border-l-4 bg-slate-50/70 p-3 sm:p-3.5 dark:border-slate-800 dark:bg-slate-900/40 ${meta.bar}`}>
                               <div className="flex items-center justify-between gap-3">
-                                <p className="font-bold">{meta.icon} {a.title}</p>
-                                <span className={`rounded-full px-2 py-0.5 text-xs font-bold uppercase ${meta.chip}`}>{a.severity}</span>
+                                <p className="font-bold text-xs sm:text-sm">{meta.icon} {a.title}</p>
+                                <span className={`rounded-full px-2 py-0.5 text-[10px] sm:text-xs font-bold uppercase ${meta.chip}`}>{a.severity}</span>
                               </div>
-                              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{a.message}</p>
-                              <p className="mt-1 text-xs text-slate-400">{formatDate(a.createdAt)}</p>
+                              <p className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-300">{a.message}</p>
+                              <p className="mt-1 text-[11px] text-slate-400">{formatDate(a.createdAt)}</p>
                             </div>
                           );
                         })
                       )}
                     </div>
-                  </section>
+                  </TiltCard>
 
                   {/* Register */}
-                  <section className="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
+                  <TiltCard className="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
                     {/* 21st.dev Forest ASCII Pixel Art Canvas Background */}
                     <AsciiForestCanvas />
-                    <div className="relative z-10">
-                      <h2 className="font-dashboard text-xl font-bold tracking-tight">Register Tourist</h2>
+                    <div className="relative z-10 depth-1">
+                      <div className="flex items-center gap-2.5">
+                        <Emoji3DBadge emoji="🛡️" glowColor="cyan" size="sm" />
+                        <h2 className="font-dashboard text-lg sm:text-xl font-bold tracking-tight">Register Tourist</h2>
+                      </div>
                       <form onSubmit={register} autoComplete="off" className="mt-3">
-                        <label className="block text-sm font-medium text-slate-600 dark:text-slate-300">
+                        <label className="block text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300">
                           Full Name *
                           <input className={inputCls} required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
                         </label>
                         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                          <label className="block text-sm font-medium text-slate-600 dark:text-slate-300">
+                          <label className="block text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300">
                             Aadhar (optional)
                             <input className={inputCls} maxLength={12} value={form.aadhar} onChange={(e) => setForm({ ...form, aadhar: e.target.value.replace(/\D/g, '') })} />
                           </label>
-                          <label className="block text-sm font-medium text-slate-600 dark:text-slate-300">
+                          <label className="block text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300">
                             Phone
                             <input className={inputCls} type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
                           </label>
-                          <label className="block text-sm font-medium text-slate-600 dark:text-slate-300">
+                          <label className="block text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300">
                             Emergency Contact
                             <input className={inputCls} type="tel" value={form.emergencyContact} onChange={(e) => setForm({ ...form, emergencyContact: e.target.value })} />
                           </label>
-                          <label className="block text-sm font-medium text-slate-600 dark:text-slate-300">
+                          <label className="block text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300">
                             From (city)
                             <input className={inputCls} value={form.from} onChange={(e) => setForm({ ...form, from: e.target.value })} />
                           </label>
                         </div>
-                        <label className="mt-3 block text-sm font-medium text-slate-600 dark:text-slate-300">
+                        <label className="mt-3 block text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300">
                           Destination to visit
                           <input className={inputCls} value={form.to} onChange={(e) => setForm({ ...form, to: e.target.value })} />
                         </label>
-                        <label className="mt-3 block text-sm font-medium text-slate-600 dark:text-slate-300">
+                        <label className="mt-3 block text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300">
                           Address / Notes
                           <textarea className={`${inputCls} min-h-[72px]`} rows={2} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
                         </label>
@@ -2795,70 +3568,79 @@
                             </div>
                           </button>
                           {/* From Uiverse.io by ke1221 */}
-                          <button type="button" onClick={() => downloadJSON('travelshield_db.json', { users, sos, alerts })} className="neu-btn shrink-0">Download DB</button>
+                          <button type="button" onClick={() => downloadJSON('travelshield_db.json', { users, sos, alerts })} className="neu-btn shrink-0 text-center">Download DB</button>
                         </div>
                       </form>
-                      {regStatus && <p className="mt-2 text-sm font-medium text-brand-600 dark:text-brand-400">{regStatus}</p>}
+                      {regStatus && <p className="mt-2 text-xs sm:text-sm font-medium text-brand-600 dark:text-brand-400">{regStatus}</p>}
                       {lastId && (
-                        <div className="mt-3 flex items-center gap-2 rounded-lg bg-brand-50 p-3 text-sm dark:bg-slate-800">
+                        <div className="mt-3 flex items-center gap-2 rounded-lg bg-brand-50 p-3 text-xs sm:text-sm dark:bg-slate-800">
                           <span className="font-semibold text-brand-700 dark:text-brand-300">Your Unique ID:</span>
                           <code className="font-mono text-xs">{lastId}</code>
                           <button onClick={async () => { const ok = await copyToClipboard(lastId); setRegStatus(ok ? 'ID copied!' : 'Failed'); }} className="ml-auto rounded bg-white px-2.5 py-1 text-xs font-semibold shadow-sm dark:bg-slate-700">Copy</button>
                         </div>
                       )}
                     </div>
-                  </section>
+                  </TiltCard>
 
                   {/* Lookup */}
-                  <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
-                    <h2 className="font-dashboard text-xl font-bold tracking-tight">ID Lookup</h2>
-                    <div className="mt-3 flex items-center gap-3">
-                      <input className={`${inputCls} mt-0`} placeholder="Enter unique ID" value={lookupId} onChange={(e) => setLookupId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && doLookup()} />
+                  <TiltCard className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
+                    <div className="flex items-center gap-2.5 depth-1">
+                      <Emoji3DBadge emoji="🔍" glowColor="blue" size="sm" />
+                      <h2 className="font-dashboard text-lg sm:text-xl font-bold tracking-tight">ID Lookup</h2>
+                    </div>
+                    <div className="mt-3.5 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 depth-1">
+                      <input className={`${inputCls} mt-0 flex-1`} placeholder="Enter unique ID" value={lookupId} onChange={(e) => setLookupId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && doLookup()} />
                       <button onClick={doLookup} className="dot-retro-btn shrink-0">
                         <div><span>Lookup</span></div>
                       </button>
                     </div>
-                    {lookupResult === 'none' && <p className="mt-3 text-sm font-medium text-danger">No record found.</p>}
+                    {lookupResult === 'none' && <p className="mt-3 text-xs sm:text-sm font-medium text-danger">No record found.</p>}
                     {lookupResult && lookupResult !== 'none' && (
-                      <dl className="mt-3 grid gap-2 rounded-lg border border-slate-100 bg-slate-50 p-4 text-sm sm:grid-cols-2 dark:border-slate-800 dark:bg-slate-900/50">
-                        <div><dt className="text-xs uppercase text-slate-400">Name</dt><dd className="font-semibold">{lookupResult.name}</dd></div>
-                        <div><dt className="text-xs uppercase text-slate-400">Phone</dt><dd className="font-semibold">{lookupResult.phone || '—'}</dd></div>
-                        <div><dt className="text-xs uppercase text-slate-400">Emergency</dt><dd className="font-semibold">{lookupResult.emergencyContact || '—'}</dd></div>
-                        <div><dt className="text-xs uppercase text-slate-400">Destination</dt><dd className="font-semibold">{lookupResult.to || '—'}</dd></div>
+                      <dl className="mt-3 grid gap-2 rounded-lg border border-slate-100 bg-slate-50 p-3.5 sm:p-4 text-xs sm:text-sm sm:grid-cols-2 dark:border-slate-800 dark:bg-slate-900/50 depth-1">
+                        <div><dt className="text-[11px] uppercase text-slate-400">Name</dt><dd className="font-semibold">{lookupResult.name}</dd></div>
+                        <div><dt className="text-[11px] uppercase text-slate-400">Phone</dt><dd className="font-semibold">{lookupResult.phone || '—'}</dd></div>
+                        <div><dt className="text-[11px] uppercase text-slate-400">Emergency</dt><dd className="font-semibold">{lookupResult.emergencyContact || '—'}</dd></div>
+                        <div><dt className="text-[11px] uppercase text-slate-400">Destination</dt><dd className="font-semibold">{lookupResult.to || '—'}</dd></div>
                       </dl>
                     )}
-                  </section>
+                  </TiltCard>
 
                   {/* Helplines */}
-                  <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
-                    <h2 className="font-dashboard text-xl font-bold tracking-tight">🚨 Quick Helplines</h2>
-                    <div className="mt-3 space-y-3">
+                  <TiltCard className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
+                    <div className="flex items-center gap-2.5 depth-1">
+                      <Emoji3DBadge emoji="🚨" glowColor="rose" size="sm" />
+                      <h2 className="font-dashboard text-lg sm:text-xl font-bold tracking-tight">Quick Helplines</h2>
+                    </div>
+                    <div className="mt-3.5 space-y-3 depth-1">
                       {HELPLINES.map((h) => (
-                        <div key={h.number} className="flex items-center justify-between rounded-lg border border-slate-100 p-3 dark:border-slate-800">
+                        <div key={h.number} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-lg border border-slate-100 p-3 dark:border-slate-800">
                           <div>
-                            <p className="font-bold">{h.label}</p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">{h.sub}</p>
+                            <p className="font-bold text-xs sm:text-sm">{h.label}</p>
+                            <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">{h.sub}</p>
                           </div>
-                          <a href={`tel:${h.number}`} className={`dot-retro-btn ${h.tone === 'danger' ? 'dot-retro-btn-danger' : ''}`}>
+                          <a href={`tel:${h.number}`} className={`dot-retro-btn self-start sm:self-auto ${h.tone === 'danger' ? 'dot-retro-btn-danger' : ''}`}>
                             <div><span>Call {h.number}</span></div>
                           </a>
                         </div>
                       ))}
                     </div>
-                  </section>
+                  </TiltCard>
 
                   {/* Registered Tourists */}
-                  <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
-                    <h2 className="font-display text-lg font-bold">Registered Tourists (Local Browser Data)</h2>
-                    <div className="mt-3 space-y-2">
+                  <TiltCard className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
+                    <div className="flex items-center gap-2.5 depth-1">
+                      <Emoji3DBadge emoji="👥" glowColor="cyan" size="sm" />
+                      <h2 className="font-display text-base sm:text-lg font-bold">Registered Tourists (Local Browser Data)</h2>
+                    </div>
+                    <div className="mt-3.5 space-y-2 depth-1">
                       {users.length === 0 ? (
-                        <p className="text-sm text-slate-500">No users registered yet.</p>
+                        <p className="text-xs sm:text-sm text-slate-500">No users registered yet.</p>
                       ) : (
                         users.map((u) => (
                           <div key={u.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-100 p-3 dark:border-slate-800">
                             <div>
-                              <p className="font-bold">{u.name} <span className="font-mono text-xs font-normal text-slate-400">({u.id.slice(0, 8)})</span></p>
-                              <p className="text-xs text-slate-500">Dest: {u.to || '—'} &bull; Reg: {formatDate(u.createdAt)}</p>
+                              <p className="font-bold text-xs sm:text-sm">{u.name} <span className="font-mono text-xs font-normal text-slate-400">({u.id.slice(0, 8)})</span></p>
+                              <p className="text-[11px] sm:text-xs text-slate-500">Dest: {u.to || '—'} &bull; Reg: {formatDate(u.createdAt)}</p>
                             </div>
                             <div className="flex gap-2">
                               <button onClick={() => triggerSos(u)} className="rounded bg-danger px-3 py-1.5 text-xs font-bold text-white shadow-sm">SOS</button>
@@ -2868,24 +3650,24 @@
                         ))
                       )}
                     </div>
-                  </section>
+                  </TiltCard>
                 </main>
               ) : (
-                /* Admin Tab */
+                /* Admin Tab (🔐 📢) */
                 <aside className="mt-6 space-y-6">
                   {!adminAuthed ? (
-                    <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-[#0b1f2e]">
+                    <TiltCard className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-[#0b1f2e]">
                       {/* 21st.dev Forest ASCII Pixel Art Canvas Background */}
                       <AsciiForestCanvas />
-                      <form className="relative z-10 w-full p-6" onSubmit={(e) => { e.preventDefault(); loginAdmin(); }}>
-                        <div className="text-center">
-                          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-600/10 text-2xl font-bold text-brand-600 dark:bg-brand-500/20 dark:text-brand-400">
-                            🔐
+                      <form className="relative z-10 w-full p-5 sm:p-6" onSubmit={(e) => { e.preventDefault(); loginAdmin(); }}>
+                        <div className="text-center depth-2">
+                          <div className="mx-auto flex items-center justify-center">
+                            <Emoji3DBadge emoji="🔐" glowColor="cyan" size="lg" />
                           </div>
-                          <h2 className="mt-3 font-dashboard text-2xl font-extrabold text-ink dark:text-white">Admin Login</h2>
+                          <h2 className="mt-3 font-dashboard text-xl sm:text-2xl font-extrabold text-ink dark:text-white">Admin Login</h2>
                           <p className="mt-1 text-xs font-semibold text-slate-500 dark:text-slate-400">Log in to dashboard</p>
                         </div>
-                        <div className="mt-6 space-y-4">
+                        <div className="mt-5 sm:mt-6 space-y-4 depth-1">
                           <div>
                             <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Username</label>
                             <input
@@ -2918,29 +3700,32 @@
                           {adminStatus && <p className="text-center text-xs font-bold text-danger">{adminStatus}</p>}
                         </div>
                       </form>
-                    </div>
+                    </TiltCard>
                   ) : (
                     <>
-                      <section className="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
+                      <TiltCard className="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
                         {/* 21st.dev Forest ASCII Pixel Art Canvas Background */}
                         <AsciiForestCanvas />
-                        <div className="relative z-10">
+                        <div className="relative z-10 depth-1">
                           <div className="flex items-center justify-between">
-                            <h2 className="font-dashboard text-xl font-bold tracking-tight">Admin Overview</h2>
-                            <button onClick={() => setAdminAuthed(false)} className="rounded bg-danger px-3 py-1 text-sm font-bold text-white">Logout</button>
+                            <div className="flex items-center gap-2.5">
+                              <Emoji3DBadge emoji="📊" glowColor="blue" size="sm" />
+                              <h2 className="font-dashboard text-lg sm:text-xl font-bold tracking-tight">Admin Overview</h2>
+                            </div>
+                            <button onClick={() => setAdminAuthed(false)} className="rounded bg-danger px-3 py-1 text-xs sm:text-sm font-bold text-white">Logout</button>
                           </div>
-                          <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                            <div className="rounded-lg border border-slate-100 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/70">
-                              <p className="font-dashboard text-2xl font-extrabold text-brand-600">{users.length}</p>
-                              <p className="text-xs uppercase text-slate-400">Registered</p>
+                          <div className="mt-4 grid gap-3 grid-cols-1 sm:grid-cols-3">
+                            <div className="rounded-lg border border-slate-100 bg-slate-50/80 p-3.5 sm:p-4 dark:border-slate-800 dark:bg-slate-900/70">
+                              <p className="font-dashboard text-xl sm:text-2xl font-extrabold text-brand-600">{users.length}</p>
+                              <p className="text-[11px] uppercase text-slate-400">Registered</p>
                             </div>
-                            <div className="rounded-lg border border-slate-100 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/70">
-                              <p className="font-dashboard text-2xl font-extrabold text-danger">{sos.length}</p>
-                              <p className="text-xs uppercase text-slate-400">SOS Logs</p>
+                            <div className="rounded-lg border border-slate-100 bg-slate-50/80 p-3.5 sm:p-4 dark:border-slate-800 dark:bg-slate-900/70">
+                              <p className="font-dashboard text-xl sm:text-2xl font-extrabold text-danger">{sos.length}</p>
+                              <p className="text-[11px] uppercase text-slate-400">SOS Logs</p>
                             </div>
-                            <div className="rounded-lg border border-slate-100 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/70">
-                              <p className="font-dashboard text-2xl font-extrabold text-warn">{alerts.length}</p>
-                              <p className="text-xs uppercase text-slate-400">Active Alerts</p>
+                            <div className="rounded-lg border border-slate-100 bg-slate-50/80 p-3.5 sm:p-4 dark:border-slate-800 dark:bg-slate-900/70">
+                              <p className="font-dashboard text-xl sm:text-2xl font-extrabold text-warn">{alerts.length}</p>
+                              <p className="text-[11px] uppercase text-slate-400">Active Alerts</p>
                             </div>
                           </div>
                           <div className="mt-4 flex flex-col gap-2 sm:flex-row">
@@ -2949,41 +3734,47 @@
                             <button onClick={() => downloadJSON('sos_logs.json', sos)} className="rounded bg-slate-100 px-3 py-2 text-xs font-semibold dark:bg-slate-800">Export SOS</button>
                           </div>
                         </div>
-                      </section>
+                      </TiltCard>
 
-                      <section className="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
+                      <TiltCard className="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
                         {/* 21st.dev Forest ASCII Pixel Art Canvas Background */}
                         <AsciiForestCanvas />
-                        <div className="relative z-10">
-                          <h3 className="font-dashboard text-lg font-bold tracking-tight">Broadcast Alert</h3>
+                        <div className="relative z-10 depth-1">
+                          <div className="flex items-center gap-2.5">
+                            <Emoji3DBadge emoji="📢" glowColor="amber" size="sm" />
+                            <h3 className="font-dashboard text-base sm:text-lg font-bold tracking-tight">Broadcast Alert</h3>
+                          </div>
                           <form onSubmit={broadcastAlert} className="mt-3 space-y-3">
-                            <div className="flex gap-2">
+                            <div className="flex flex-col sm:flex-row gap-2">
                               <input className={`${inputCls} mt-0 flex-1`} placeholder="Alert Title" value={alertDraft.title} onChange={(e) => setAlertDraft({ ...alertDraft, title: e.target.value })} />
-                              <select className={`${inputCls} mt-0 w-32`} value={alertDraft.severity} onChange={(e) => setAlertDraft({ ...alertDraft, severity: e.target.value })}>
+                              <select className={`${inputCls} mt-0 sm:w-32`} value={alertDraft.severity} onChange={(e) => setAlertDraft({ ...alertDraft, severity: e.target.value })}>
                                 <option value="info">Info</option>
                                 <option value="warning">Warning</option>
                                 <option value="danger">Danger</option>
                               </select>
                             </div>
                             <textarea className={`${inputCls} min-h-[60px]`} placeholder="Alert details..." value={alertDraft.message} onChange={(e) => setAlertDraft({ ...alertDraft, message: e.target.value })} />
-                            <button type="submit" className="w-full rounded-lg bg-brand-600 py-2.5 font-semibold text-white hover:bg-brand-700">Broadcast Alert</button>
+                            <button type="submit" className="w-full rounded-lg bg-brand-600 py-2.5 font-semibold text-white hover:bg-brand-700 transition">Broadcast Alert</button>
                           </form>
-                          {alertStatus && <p className="mt-2 text-sm font-medium text-brand-600">{alertStatus}</p>}
+                          {alertStatus && <p className="mt-2 text-xs sm:text-sm font-medium text-brand-600">{alertStatus}</p>}
                         </div>
-                      </section>
+                      </TiltCard>
 
-                      <section className="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
+                      <TiltCard className="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm dark:border-slate-800 dark:bg-[#0b1f2e]">
                         {/* 21st.dev Forest ASCII Pixel Art Canvas Background */}
                         <AsciiForestCanvas />
-                        <div className="relative z-10">
-                          <h3 className="font-dashboard text-lg font-bold tracking-tight">Security</h3>
-                          <div className="mt-3 flex gap-2">
-                            <input className={`${inputCls} mt-0`} type="password" placeholder="New admin password" value={newPass} onChange={(e) => setNewPass(e.target.value)} />
-                            <button onClick={changePass} className="rounded-lg bg-brand-600 px-4 font-semibold text-white">Update</button>
+                        <div className="relative z-10 depth-1">
+                          <div className="flex items-center gap-2.5">
+                            <Emoji3DBadge emoji="🔐" glowColor="cyan" size="sm" />
+                            <h3 className="font-dashboard text-base sm:text-lg font-bold tracking-tight">Security & Credentials</h3>
                           </div>
-                          {securityStatus && <p className="mt-2 text-sm font-medium text-brand-600">{securityStatus}</p>}
+                          <div className="mt-3 flex flex-col sm:flex-row gap-2">
+                            <input className={`${inputCls} mt-0 flex-1`} type="password" placeholder="New admin password" value={newPass} onChange={(e) => setNewPass(e.target.value)} />
+                            <button onClick={changePass} className="rounded-lg bg-brand-600 px-4 py-2.5 font-semibold text-white hover:bg-brand-700 transition">Update</button>
+                          </div>
+                          {securityStatus && <p className="mt-2 text-xs sm:text-sm font-medium text-brand-600">{securityStatus}</p>}
                         </div>
-                      </section>
+                      </TiltCard>
                     </>
                   )}
                 </aside>
